@@ -1,11 +1,32 @@
+/* ============= TOKYO NIGHT THEME (stable) ============= */
+
+/* Theme tokens */
 :root{
-  --bg:#0b0f1a; --panel:#0a0d16; --muted:#94a3b8; --text:#e5e7eb;
-  --accent:#7c3aed; --accent2:#ef4444; --accent3:#1e3a8a; --border:#1f2937;
-  --jp-red:#b91c1c; --jp-deep:#7f1d1d; --jp-gold:#eab308; --jp-indigo:#1e3a8a; --jp-rose:#ff8fb1;
+  --bg:#0b0f1a;
+  --panel:#0a0d16;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+
+  --border:rgba(207,192,165,0.4);
+  --border-strong:rgba(179,164,137,0.6);
+
+  --ink-1:#f8f1d6;
+  --ink-2:#f2e6bf;
+
+  /* JDM palette */
+  --jdm-green:#00ff9d;
+  --jdm-purple:#8b5cf6;
+
+  --accent:var(--jdm-green);
+  --accent-2:var(--jdm-purple);
+  --accent-ok:var(--jdm-green);
+  --accent-warn:#ff5e5e; /* softer neon red */
+
+  --jp-red:#ff3b3b;
+  --jp-gold:#b3b3b3;
+
+  --shadow:0 6px 24px rgba(0,0,0,.35);
 }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;color:var(--text);font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
 
 /* Dark Japan background */
 body.jp-max{
@@ -17,59 +38,110 @@ body.jp-max{
   background-blend-mode: overlay, overlay, normal, multiply;
 }
 
-/* Header */
-.mincho{font-family:"Noto Serif JP", serif; letter-spacing:.03em; margin-right:6px}
-.hinomaru{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--jp-red);margin-right:8px;box-shadow:0 0 0 1px #0006 inset}
-.divider{display:inline-block;width:1px;height:14px;background:#334155;margin:0 8px;vertical-align:middle}
+/* ====== Layout ====== */
+.app{
+  position:relative; z-index:1;
+  display:grid;
+  grid-template-columns:300px 1fr;
+  grid-template-rows:auto 1fr;
+  min-height:100vh;
+}
+header{
+  grid-column:1/-1;
+  display:flex; align-items:center; gap:12px; justify-content:space-between;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  background:rgba(6,10,20,.7);
+  backdrop-filter:blur(6px);
+}
+.title{
+  font-weight:700; color:#fca5a5; display:flex; align-items:center; gap:6px;
+}
+.mincho{ font-family:"Noto Serif JP", serif; letter-spacing:.03em; margin-right:6px }
+.hinomaru{ display:inline-block; width:14px; height:14px; border-radius:50%; background:var(--jp-red); box-shadow:0 0 0 1px #0006 inset }
+.divider{ width:1px; height:14px; background:#334155; display:inline-block; margin:0 8px }
 
-.app{position:relative; z-index:1; display:grid;grid-template-columns:300px 1fr;grid-template-rows:auto 1fr;min-height:100vh}
-header{grid-column:1/-1;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(6,10,20,.7);backdrop-filter:blur(6px)}
-.title{font-weight:700;color:#fca5a5}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:linear-gradient(180deg,#111827,#0a1222)}
-.pill input[type=date]{background:transparent;border:none;color:var(--text)}
+.header-center{ flex:1; text-align:center }
+.countdown-widget{
+  display:inline-block;
+  font-weight:800; letter-spacing:.02em;
+  color:var(--jp-gold);
+  padding:6px 12px;
+  border-radius:999px;
+  background:linear-gradient(180deg,var(--ink-1),var(--ink-2));
+  border:1px solid var(--border);
+  box-shadow:0 2px 0 #0006, inset 0 0 0 1px #000;
+}
 
-aside{border-right:1px solid var(--border);background:rgba(255,255,255,.03)}
-.sidebar{padding:12px;display:flex;flex-direction:column;gap:12px}
-.section{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px}
-.section h3{margin:0;padding:8px 10px;border-bottom:1px solid var(--border);font-size:14px;color:#f1f5f9}
-.route{padding:6px 8px;display:flex;flex-direction:column;gap:6px}
-.route button{width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1220,#0a0f1d);color:var(--text);cursor:pointer}
-.route button:hover{border-color:#334155}
-.route button.active{background:linear-gradient(180deg,#b91c1c,#7f1d1d);border-color:#b91c1c;color:#fff;transform:scale(1.03)}
-.badge{font-size:11px;color:#fde68a;background:#7c2d12;padding:2px 8px;border-radius:999px;margin-left:6px}
-.friend{color:#f59e0b}
+/* ====== Sidebar ====== */
+aside{ border-right:1px solid var(--border); background:rgba(255,255,255,.03) }
+.sidebar{ padding:12px; display:flex; flex-direction:column; gap:12px }
+.section{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+.section h3{
+  margin:0; padding:8px 10px;
+  border-bottom:1px solid var(--border);
+  font-size:14px; color:#f1f5f9;
+}
+.route{ padding:6px 8px; display:flex; flex-direction:column; gap:6px }
+.route button{
+  width:100%; text-align:left;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1220,#0a0f1d);
+  color:var(--text); cursor:pointer;
+  transition:transform .12s ease, border-color .12s ease, background .12s ease;
+}
+.route button:hover{ border-color:var(--border-strong) }
+.route button.active{
+  background:linear-gradient(180deg,#991b1b,#7f1d1d);
+  border-color:#991b1b;
+  color:#fff; transform:scale(1.03);
+}
+.badge{ font-size:11px; color:#fde68a; background:#7c2d12; padding:2px 8px; border-radius:999px; margin-left:6px }
+.friend{ color:#f59e0b }
 
-main{padding:14px}
-.content{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+/* ====== Main / Cards ====== */
+main{ padding:14px }
+.content{ display:grid; grid-template-columns:1.1fr .9fr; gap:14px }
+.card{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.card h3{
+  margin:0; font-size:14px; color:#f8fafc;
+  border-bottom:1px solid var(--border);
+  padding:8px 10px;
+  background:linear-gradient(180deg,#0b1020,#08101f);
+}
+.card h3::before{ content:"⛩ "; color:var(--jp-gold) }
+.card .inner{ padding:10px }
+.mtop{ margin-top:14px }
 
-/* Cards */
-.card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px #0007}
-.card h3{margin:0;font-size:14px;color:#f8fafc;border-bottom:1px solid var(--border);padding:8px 10px;background:linear-gradient(180deg,#0b1020,#08101f)}
-.card h3::before{content:"⛩ "; color:var(--jp-gold)}
-.card .inner{padding:10px}
+/* ====== Map ====== */
+.mapWrap{ position:relative; height:520px }
+#leafletMap{ width:100%; height:100%; border-radius:12px; outline:2px solid #172036; box-shadow:0 2px 18px #0008 }
+.leaflet-container{ background:#0a1020 }
 
-/* Map */
-.mapWrap{position:relative;height:520px}
-#leafletMap{width:100%;height:100%;border-radius:12px;outline:2px solid #172036;box-shadow:0 2px 18px #0008}
-.leaflet-container{background:#0a1020}
-
-/* ema-style tooltip tags — (fixed selector) */
+/* Ema-style city tooltips */
 .leaflet-tooltip.city-label{
-  background: linear-gradient(180deg,#f8f1d6,#e7d8a1);
-  border: 1px solid #7c2d12;
-  color: #1f2937;
-  padding: 4px 8px;
-  border-radius: 4px;
-  box-shadow: 0 2px 0 #0004;
-  font-weight: 700;
-  font-size: 12px;
+  background:linear-gradient(180deg,#f8f1d6,#e7d8a1);
+  border:1px solid #7c2d12; color:#1f2937;
+  padding:4px 8px; border-radius:4px; box-shadow:0 2px 0 #0004;
+  font-weight:700; font-size:12px;
 }
 .leaflet-tooltip.city-label:before{
   content:""; position:absolute; left:-6px; top:8px; width:0; height:0;
   border-top:6px solid transparent; border-bottom:6px solid transparent; border-right:6px solid #7c2d12;
 }
 
-/* pulse ring for selected city */
+/* Selected-city pulse */
 .pulse-ring{
   width:22px; height:22px; border-radius:50%;
   border:3px solid var(--jp-red);
@@ -78,78 +150,350 @@ main{padding:14px}
   pointer-events:none;
 }
 @keyframes pulse{
-  0%{transform:translate(-50%,-50%) scale(.6); opacity:.95}
-  100%{transform:translate(-50%,-50%) scale(2.6); opacity:0}
+  0%{ transform:translate(-50%,-50%) scale(.6); opacity:.95 }
+  100%{ transform:translate(-50%,-50%) scale(2.6); opacity:0 }
 }
-.legend{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.5);border:1px solid var(--border);padding:6px 8px;border-radius:10px;color:#cbd5e1;font-size:12px}
 
-/* Forms */
-.grid.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.grid.two.span2{grid-column:1/-1}
-label{font-size:12px;color:#cbd5e1}
-input,textarea,select{width:100%;background:linear-gradient(180deg,#0c1222,#0a0e18);color:var(--text);border:1px solid #223049;border-radius:10px;padding:10px}
-input::placeholder,textarea::placeholder{color:#8ea0b8}
-.bigarea{width:100%;min-height:160px}
+.legend{
+  position:absolute; right:10px; bottom:10px;
+  background:rgba(0,0,0,.5);
+  border:1px solid var(--border);
+  padding:6px 8px; border-radius:10px;
+  color:#cbd5e1; font-size:12px;
+}
 
-/* Tabs */
-.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);padding:8px 8px 0}
-.tab{padding:8px 10px;border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;background:linear-gradient(180deg,#0c1324,#0a101b);cursor:pointer;color:#e2e8f0}
-.tab.active{color:#fff;background:linear-gradient(180deg,#1e3a8a,#7c3aed);border-color:transparent}
-.tabPanel{padding:10px}
+/* ====== Forms ====== */
+.grid.two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px }
+.grid.two.span2{ grid-column:1/-1 }
+label{ font-size:12px; color:#cbd5e1 }
 
-/* Budget table */
-.table-clean{width:100%;border-collapse:separate;border-spacing:0}
+input,textarea,select{
+  width:100%;
+  background:linear-gradient(180deg,#0c1222,#0a0e18);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+}
+input::placeholder,textarea::placeholder{ color:#8ea0b8 }
+
+/* Dark select dropdown (popup) */
+select{ appearance:none; background-image:
+  linear-gradient(180deg,#0c1222,#0a0e18);
+}
+select option{
+  background:#0f172a; color:#e5e7eb;
+}
+
+/* Focus state (keyboard/accessibility) */
+input:focus, textarea:focus, select:focus, .btn:focus, .route button:focus{
+  outline:2px solid #334155; outline-offset:2px;
+  border-color:#334155;
+}
+
+/* ====== Tabs ====== */
+.tabs{ display:flex; gap:8px; border-bottom:1px solid var(--border); padding:8px 8px 0 }
+.tab{
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-bottom:none;
+  border-radius:10px 10px 0 0;
+  background:linear-gradient(180deg,#0c1324,#0a101b);
+  cursor:pointer; color:#e2e8f0;
+  transition:background .12s ease, transform .12s ease;
+}
+.tab:hover{ transform:translateY(-1px) }
+.tab.active{
+  color:#fff;
+  background:linear-gradient(180deg,var(--accent-2),var(--accent));
+  border-color:transparent;
+}
+.tabPanel{ padding:10px }
+
+/* ====== Budget table ====== */
+.table-clean{ width:100%; border-collapse:separate; border-spacing:0 }
 .table-clean thead th{
-  position:sticky; top:0; background:linear-gradient(180deg,#1b2450,#141a34);
-  z-index:1; border-bottom:1px solid var(--border); padding:12px 10px; font-weight:800;
-  color:#f8fafc; letter-spacing:.02em; font-feature-settings:"tnum" 1,"lnum" 1;
+  position:sticky; top:0;
+  background:linear-gradient(180deg,#1b2450,#141a34);
+  z-index:1; border-bottom:1px solid var(--border);
+  padding:12px 10px; font-weight:800; color:#f8fafc;
+  letter-spacing:.02em; font-feature-settings:"tnum" 1,"lnum" 1;
 }
-.table-clean tbody td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle; font-feature-settings:"tnum" 1,"lnum" 1;}
-.table-clean tbody tr:nth-child(even){background:rgba(255,255,255,.03)}
-.table-clean tbody tr:hover{background:rgba(255,255,255,.06)}
-.table-clean tfoot td{padding:12px 10px;border-top:1px solid var(--border);font-weight:800;background:linear-gradient(180deg,#10172a,#0c1426)}
+.table-clean tbody td{
+  padding:12px 10px; border-bottom:1px solid var(--border); vertical-align:middle;
+  font-feature-settings:"tnum" 1,"lnum" 1;
+}
+.table-clean tbody tr:nth-child(even){ background:rgba(255,255,255,.03) }
+.table-clean tbody tr:hover{ background:rgba(255,255,255,.06) }
+.table-clean tfoot td{
+  padding:12px 10px; border-top:1px solid var(--border); font-weight:800;
+  background:linear-gradient(180deg,#10172a,#0c1426)
+}
 .num{text-align:right}
 .right{text-align:right}
 
-/* Buttons */
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1220,#0a0f1d);color:var(--text);cursor:pointer;box-shadow:0 2px 0 #0006}
-.btn.primary{background:linear-gradient(180deg,#1e3a8a,#7c3aed);border-color:transparent}
-.btn.ok{background:linear-gradient(180deg,#16a34a,#065f46);border-color:transparent}
-.btn.warn{background:linear-gradient(180deg,#f59e0b,#b45309);border-color:transparent}
-.hint{font-size:12px;color:#cbd5e1}
-.foot{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:8px;border-top:1px solid var(--border)}
-.list{list-style:none;padding-left:0;margin:0;display:flex;flex-direction:column;gap:6px}
-.mtop{margin-top:14px}
-.inline{display:flex;gap:6px;align-items:center}
+/* ====== Buttons ====== */
+.actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px }
+.btn{
+  padding:10px 12px; border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1220,#0a0f1d);
+  color:var(--text); cursor:pointer;
+  box-shadow:0 2px 0 #0006;
+  transition:transform .12s ease, filter .12s ease, background .12s ease;
+}
+.btn:hover{ filter:brightness(1.05) }
+.btn.primary{ background:linear-gradient(180deg,var(--accent-2),var(--accent)); border-color:transparent }
+.btn.ok{ background:linear-gradient(180deg,var(--accent-ok),#065f46); border-color:transparent }
+.btn.warn{ background:linear-gradient(180deg,var(--accent-warn),#b45309); border-color:transparent }
 
-/* PACKING / TO-DO — clean row layout */
-#tab-checklist .actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
-#tab-checklist .actions input{ flex:1 1 260px; }
-#checklist{ margin:0; padding:0; display:flex; flex-direction:column; gap:8px; width:100%; }
+/* ====== Checklist ====== */
+.list{ list-style:none; padding-left:0; margin:0; display:flex; flex-direction:column; gap:6px }
+#tab-checklist .actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px }
+#tab-checklist .actions input{ flex:1 1 260px }
+#checklist{ margin:0; padding:0; display:flex; flex-direction:column; gap:8px; width:100% }
 #checklist li{
   list-style:none; display:flex; align-items:center; gap:10px;
   padding:10px; border:1px solid var(--border); border-radius:10px;
   background:linear-gradient(180deg,#0c1222,#0a0e18);
 }
-#checklist input[type="checkbox"]{ width:18px; height:18px; margin:0; }
-#checklist .item-text{ flex:1 1 auto; line-height:1.35; }
-#checklist .item-text.done{ opacity:.6; text-decoration:line-through; }
-#checklist .btn{ margin-left:auto; }
+#checklist input[type="checkbox"]{ width:18px; height:18px; margin:0 }
+#checklist .item-text{ flex:1 1 auto; line-height:1.35 }
+#checklist .item-text.done{ opacity:.6; text-decoration:line-through }
+#checklist .btn{ margin-left:auto }
 
-/* SHARED NOTES multi-note grid */
-#tab-shared .actions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px}
-#tab-shared .actions input{flex:1 1 260px}
-.notes-grid{display:grid; grid-template-columns:repeat( auto-fit, minmax(280px,1fr) ); gap:12px; margin-top:12px;}
+/* ====== Shared Notes ====== */
+#tab-shared .actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px }
+#tab-shared .actions input{ flex:1 1 260px }
+.notes-grid{
+  display:grid; grid-template-columns:repeat( auto-fit, minmax(280px,1fr) );
+  gap:12px; margin-top:12px;
+}
 .note-card{
   background:linear-gradient(180deg,#0c1222,#0a0e18);
   border:1px solid var(--border);
   border-radius:12px; padding:12px;
   display:flex; flex-direction:column; gap:8px;
 }
-.note-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
-.note-title{font-weight:700}
-.note-meta{font-size:12px; color:var(--muted)}
-.note-body{white-space:pre-wrap; line-height:1.45}
-.note-tags{font-size:12px; color:#eab308}
-.note-actions{display:flex; gap:8px; justify-content:flex-end}
+.note-head{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+.note-title{ font-weight:700 }
+.note-meta{ font-size:12px; color:var(--muted) }
+.note-body{ white-space:pre-wrap; line-height:1.45 }
+.note-tags{ font-size:12px; color:var(--jp-gold) }
+.note-actions{ display:flex; gap:8px; justify-content:flex-end }
+
+/* ====== Itinerary (visual polish only) ====== */
+.it-actions input, .it-actions select{ max-width:170px }
+#itineraryList{ display:flex; flex-direction:column; gap:10px }
+.it-day{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.it-day .it-head{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px; cursor:pointer; user-select:none; background:#0d1424;
+}
+.it-day .it-head h3{ margin:0; font-size:14px; color:#f87171 }
+.it-day .it-items{ padding:6px 10px 10px 10px; display:flex; flex-direction:column; gap:8px }
+.it-item{
+  display:flex; align-items:center; gap:10px; padding:8px 10px;
+  background:linear-gradient(180deg,#0c1222,#0a0e18);
+  border:1px solid var(--border); border-radius:8px;
+}
+.it-item.dragging{ opacity:.6 }
+.it-type{ font-size:12px; color:var(--jp-gold); min-width:46px; text-align:center }
+.it-time{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:#93c5fd; min-width:48px }
+.it-title{ flex:1 1 auto }
+.it-del{ margin-left:auto }
+
+/* ====== Responsive ====== */
+@media (max-width: 960px){
+  .app{ grid-template-columns:1fr }
+  aside{ order:2 }
+  main{ order:3 }
+}
+
+/* ====== Motion preferences ====== */
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important }
+}
+
+/* === Japanese feel — minimal, layout-safe additions (append to main styles.css) === */
+
+/* Head title in mincho + tiny kamon */
+.title{
+  font-family:"Noto Serif JP", serif;
+  color:var(--jp-red);
+}
+.title::after{
+  content:"\2738"; /* 8‑petal rosette */
+  margin-left:8px; color:var(--jp-gold); opacity:.85; font-size:12px;
+}
+
+/* Section headers on warm paper */
+.card h3{
+  font-family:"Noto Serif JP", serif;
+  background:linear-gradient(180deg,var(--jp-pink),#ffeef2);
+  color:#7a0000;
+}
+
+/* Tabs: keep structure, add icons + JP gradient when active */
+.tab[data-tab="budget"]::before{ content:"\A5"; font-weight:900; margin-right:6px }
+.tab[data-tab="checklist"]::before{ content:"\2705"; margin-right:6px }
+.tab[data-tab="shared"]::before{ content:"\1F4DC"; margin-right:6px }
+.tab[data-tab="itinerary"]::before{ content:"\1F4C5"; margin-right:6px }
+.tab.active{ background:linear-gradient(180deg,var(--jp-pink),var(--accent)); color:#fff5f5 }
+
+/* Route list: highlight active like a torii lacquer */
+.route button.active{
+  background:linear-gradient(180deg,var(--jp-red),#7f1d1d);
+  border-color:var(--jp-red);
+  color:#fff;
+}
+
+/* Countdown chip: subtle lacquer edge */
+.countdown-widget{
+  box-shadow:0 2px 0 #0008, inset 0 0 0 1px rgba(0,0,0,.5);
+}
+
+/* Map tooltip: sakura paper */
+.leaflet-tooltip.city-label{
+  background:linear-gradient(180deg,#ffeef2,#f9cbd3);
+  color:#5c0000;
+}
+
+/* Itinerary day label in vermilion */
+.it-day .it-head h3{ color:var(--jp-red) }
+
+/* Optional (off by default): floating sakura — include the markup only if desired */
+.sakura-layer{ position:fixed; inset:0; pointer-events:none; z-index:0 }
+.sakura-layer .petal{ position:absolute; top:-10vh; width:10px; height:8px; background:var(--jp-sakura); border-radius:60% 40% 60% 40%; opacity:.65; transform:rotate(15deg); animation:fall 12s linear infinite }
+.sakura-layer .petal:nth-child(2){ left:12vw; animation-delay:2s }
+.sakura-layer .petal:nth-child(3){ left:28vw; animation-delay:4s }
+.sakura-layer .petal:nth-child(4){ left:52vw; animation-delay:1s }
+.sakura-layer .petal:nth-child(5){ left:72vw; animation-delay:3s }
+.sakura-layer .petal:nth-child(6){ left:88vw; animation-delay:5s }
+@keyframes fall{ 0%{ transform:translateY(-10vh) rotate(0deg) } 100%{ transform:translateY(110vh) rotate(360deg) } }
+
+
+/* === FINAL JDM SINGLE-THEME OVERRIDES ===================== */
+
+/* Global accents (in case earlier tokens linger) */
+:root{
+  --jdm-green:#00ff9d;
+  --jdm-purple:#8b5cf6;
+  --accent:var(--jdm-green);
+  --accent-2:var(--jdm-purple);
+  --jp-red:#ff3b3b;
+  --jp-gold:#b3b3b3; /* neutral metallic, not yellow */
+}
+
+/* Header + title */
+header{ border-bottom:3px solid var(--jdm-green); background:rgba(6,10,20,.85); }
+.title{ color:#e5e7eb; }
+.title::after{ color:var(--jdm-purple); opacity:.6; }
+
+/* Countdown chip (remove yellow “washi”) */
+.countdown-widget{
+  color:#e5e7eb;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 2px 0 #0006, inset 0 0 0 1px #000;
+}
+
+/* Cards: dark header, subtle neon border */
+.card h3{
+  background:linear-gradient(180deg,#0b0f1a,#111827);
+  color:#e5e7eb;
+  border-bottom:1px solid rgba(0,229,255,.3);
+}
+.card h3::before{ color:var(--jdm-green); }
+
+/* Tabs */
+.tab.active{
+  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
+  color:#000;
+}
+
+/* Route buttons: remove maple lacquer */
+.route button.active{
+  background:linear-gradient(180deg,#1f2937,#0f172a);
+  border-color:var(--jdm-green);
+  color:#fff;
+}
+
+/* Badges */
+.badge{
+  color:#0a0d16;
+  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
+}
+.friend{ color:var(--jdm-green); }
+
+/* Map tooltip: neon, not washi */
+.leaflet-tooltip.city-label{
+  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
+  color:#000;
+  border:1px solid rgba(255,255,255,.2);
+}
+.leaflet-tooltip.city-label:before{
+  border-right-color: rgba(255,255,255,.2);
+}
+
+/* Gentle neon wash over bg */
+body.jp-max::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    linear-gradient(120deg, rgba(0,229,255,.12), rgba(255,31,112,.10) 60%, transparent 100%),
+    radial-gradient(900px 600px at 20% 100%, rgba(0,229,255,.15), transparent 70%);
+}
+
+/* === Readability fixes ===================================== */
+
+/* Put the hint on its own line, and tone down the color */
+.sidebar .inner.opt .hint,
+.section .hint{
+  display:block;
+  margin-top:6px;
+  color: var(--muted);
+}
+
+/* Make sure content inside cards/tabs is light on dark */
+.card .inner,
+.tabPanel,
+.tabPanel .actions,
+.note-card,
+.note-card .note-head,
+.note-card .note-title,
+.note-card .note-meta,
+.note-card .note-body,
+.note-card .note-tags {
+  color: var(--text);
+}
+
+/* Tables in dark: headers and cells */
+.table-clean th,
+.table-clean td {
+  color: var(--text);
+}
+
+/* Inputs/selects/textarea text + placeholder on dark bg */
+input, select, textarea {
+  color: var(--text);
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,.12);
+}
+input::placeholder,
+textarea::placeholder {
+  color: rgba(229,231,235,.55); /* light placeholder */
+}
+
+/* Route buttons: ensure base text is readable */
+.route button {
+  color: var(--text);
+}
+
+/* Checklist items */
+.list .item-text { color: var(--text); }
+.list .item-text.done { opacity:.6; text-decoration: line-through; }
