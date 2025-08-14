@@ -30,10 +30,8 @@ function load(){
     if(!raw) return base;
     const d = JSON.parse(raw);
 
-    // Normalize shapes from older saves
     d.cities = (d.cities && d.cities.length ? d.cities.map(c=>({ sideTrip:false, ...c })) : base.cities)
-      // drop any legacy friend cities that may be in saved data
-      .filter(c => !c.friend);
+      .filter(c => !c.friend); // drop legacy friend cities
 
     d.checklist = (d.checklist||base.checklist).map(x => typeof x === 'string' ? ({text:x, done:false}) : x);
     if (d.shared && (!d.notes || d.notes.length===0)) {
@@ -88,13 +86,6 @@ setInterval(updateCountdown, 60*1000);
 
 // ====== SIDEBAR / ROUTE ======
 const routeList = $('#routeList');
-
-// If the old checkbox exists in HTML, hide its container (product build)
-const toggleFriend = $('#toggleFriend');
-if (toggleFriend) {
-  const wrap = toggleFriend.closest('.inner') || toggleFriend.parentElement;
-  if (wrap) wrap.style.display = 'none';
-}
 
 function visibleCities(){ return data.cities; }
 
@@ -235,7 +226,46 @@ tabButtons.forEach(t => t.addEventListener('click', () => {
   tabButtons.forEach(x => x.classList.remove('active'));
   t.classList.add('active');
   showTab(t.dataset.tab);
+
+  // persist tab to URL without reloading
+  const url = new URL(location.href);
+  url.searchParams.set('tab', t.dataset.tab);
+  history.replaceState(null, '', url.toString());
 }));
+
+// ===== URL helpers & read-only/deep-link =====
+const QS = new URLSearchParams(location.search);
+function getQS(key){ return QS.get(key); }
+function setReadOnlyMode(on){
+  document.body.setAttribute('data-readonly', on ? '1' : '0');
+  if(on){ document.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true); }
+}
+
+// ===== Feedback =====
+
+const feedbackBtn = document.getElementById('feedbackBtn');
+if (feedbackBtn){
+  feedbackBtn.addEventListener('click', ()=>{
+    const subj = encodeURIComponent('Japan Trip Planner — Feedback');
+    const body = encodeURIComponent([
+      'Tell me what worked and what didn’t 👇',
+      '',
+      '— My browser/OS:',
+      navigator.userAgent,
+      '',
+      '— What I tried:',
+      '',
+      '— What I expected:',
+      '',
+      '— What happened instead:',
+      '',
+      '---',
+      `URL: ${location.href}`
+    ].join('\n'));
+    location.href = `mailto:your.email@example.com?subject=${subj}&body=${body}`;
+  });
+}
+
 
 // ====== BUDGET ======
 const budgetCity=$('#budgetCity'), bItem=$('#bItem'), bCost=$('#bCost'),
@@ -409,7 +439,6 @@ function renderItinerary(){
 
       // inline edit
       edit.addEventListener('click', ()=>{
-        // replace content with inline form
         el.innerHTML = '';
         const typeSel = document.createElement('select');
         typeSel.innerHTML = `
@@ -442,7 +471,6 @@ function renderItinerary(){
         cancel.addEventListener('click', ()=> renderItinerary());
 
         saveBtn.addEventListener('click', ()=>{
-          // write back
           item.type = typeSel.value;
           item.time = timeIn.value || '';
           if(item.type==='city'){
@@ -452,7 +480,7 @@ function renderItinerary(){
             item.title = titleIn.value.trim() || 'POI';
             const la = parseFloat(latIn.value), lo = parseFloat(lonIn.value);
             if(Number.isFinite(la) && Number.isFinite(lo)){ item.lat=la; item.lon=lo; } else { delete item.lat; delete item.lon; }
-          } else { // note
+          } else {
             item.title = titleIn.value.trim() || 'Note';
             delete item.ref; delete item.lat; delete item.lon;
           }
@@ -519,7 +547,6 @@ function showDayOnMap(date){
   state.activeDate = date;
   poiLayer.clearLayers(); dayRouteLayer.clearLayers();
 
-  // reset marker opacity
   cityLayer.eachLayer(l=> l.setStyle && l.setStyle({opacity:1, fillOpacity:1, radius:7}));
 
   const items = (data.itinerary||[]).filter(x=>x.date===date).sort(sortByTimeThenIndex);
@@ -549,9 +576,7 @@ function showDayOnMap(date){
   if(pts.length>=2) L.polyline(pts, {color:'#f97316', weight:4, opacity:.9}).addTo(dayRouteLayer);
   if(pts.length) map.fitBounds(L.latLngBounds(pts), {padding:[40,40]});
 
-  // dim non-active markers
   cityLayer.eachLayer(l => l.setStyle && l.setStyle({opacity:.25, fillOpacity:.25}));
-  // re-highlight active city markers
   items.forEach(it=>{
     if(it.type==='city'){
       const m = markerIndex.get(it.ref);
@@ -639,7 +664,6 @@ function decodeState(str){
     const payload = h.slice(3);
     const d = decodeState(payload);
     if (d && typeof d === "object"){
-      // merge with a fresh default to keep shapes
       const fresh = load();
       data = { ...fresh, ...d };
       data.cities = (data.cities||[]).map(c=>({ sideTrip:false, ...c })).filter(c => !c.friend);
@@ -647,7 +671,6 @@ function decodeState(str){
       data.itinerary = Array.isArray(data.itinerary) ? data.itinerary : [];
       save();
     }
-    // Clean the hash so future shares reflect any edits
     history.replaceState(null, "", location.pathname + location.search);
   }
 })();
@@ -668,6 +691,129 @@ if (shareBtn){
   });
 }
 
+// ====== STARTER TEMPLATES & ONBOARDING ======================
+const ONBOARD_LS = 'jp_onboard_done_v1';
+const TEMPLATES = {
+  firstTimer: {
+    name: '7-Day First-Timer',
+    cities: [
+      { key:"tokyo", name:"Tokyo", lat:35.6895, lon:139.6917, plan:"Shibuya, Asakusa, teamLab", sideTrip:false },
+      { key:"kyoto", name:"Kyoto", lat:35.0116, lon:135.7681, plan:"Fushimi Inari, Kiyomizu-dera, Gion", sideTrip:false },
+      { key:"osaka", name:"Osaka", lat:34.6937, lon:135.5023, plan:"Dotonbori, Kuromon, Osaka Castle", sideTrip:false },
+      { key:"hiroshima", name:"Hiroshima", lat:34.3853, lon:132.4553, plan:"Peace Park, Miyajima", sideTrip:false },
+    ],
+    days: [
+      { city:"tokyo",  items:["Shibuya Crossing","Meiji Shrine","Harajuku Takeshita"] },
+      { city:"tokyo",  items:["Asakusa Senso-ji","Sumida River","teamLab Planets"] },
+      { city:"kyoto",  items:["Fushimi Inari","Gion walk","Kiyomizu-dera"] },
+      { city:"kyoto",  items:["Arashiyama Bamboo Grove","Nishiki Market"] },
+      { city:"osaka",  items:["Dotonbori food crawl","Osaka Castle"] },
+      { city:"hiroshima", items:["Peace Memorial Park","Okonomiyaki"] },
+      { city:"hiroshima", items:["Miyajima (Itsukushima Shrine)"] },
+    ]
+  },
+  animeTokyo: {
+    name: 'Anime Tour (Tokyo)',
+    cities: [
+      { key:"tokyo", name:"Tokyo", lat:35.6895, lon:139.6917, plan:"Akihabara, Nakano Broadway, Odaiba", sideTrip:false }
+    ],
+    days: [
+      { city:"tokyo", items:["Akihabara Electric Town","Radio Kaikan","Gachapon Hall"] },
+      { city:"tokyo", items:["Nakano Broadway","Mandarake complex"] },
+      { city:"tokyo", items:["Odaiba DiverCity","Gundam statue","Palette Town"] },
+    ]
+  }
+};
+
+function parseISO(d){ const x=new Date(d); return isNaN(x)?null:x; }
+function addDays(d, n){ const z = new Date(d); z.setDate(z.getDate()+n); return z; }
+function fmtYMD(d){ return d.toISOString().slice(0,10); }
+
+function chooseStartDate(){
+  const s = departInput && departInput.value ? departInput.value : prompt("Start date (YYYY-MM-DD)?", "");
+  const d = s ? parseISO(s) : null;
+  return d ? fmtYMD(d) : null;
+}
+function applyTemplate(key){
+  const tpl = TEMPLATES[key];
+  if(!tpl) return;
+
+  const start = chooseStartDate();
+  if(!start) return alert("Template canceled — need a valid date.");
+
+  data.cities = tpl.cities.map(c => ({
+    key: c.key, name: c.name, lat: c.lat, lon: c.lon,
+    plan: c.plan || "", notes:"", dates:"", stay:"", transport:"",
+    sideTrip: !!c.sideTrip
+  }));
+
+  data.itinerary = [];
+  const startDate = parseISO(start);
+  tpl.days.forEach((day, idx) => {
+    const date = fmtYMD(addDays(startDate, idx));
+    if(day.city){
+      data.itinerary.push({ id:newId(), date, time:"", type:"city", ref: day.city });
+    }
+    (day.items||[]).forEach(t=>{
+      data.itinerary.push({ id:newId(), date, time:"", type:"poi", ref: day.city||"", title: t });
+    });
+  });
+
+  state.selected = data.cities[0]?.key || state.selected;
+  save();
+  renderRoute(); drawMap(); fillBudgetCities(); renderBudget();
+  renderChecklist(); renderNotes(); selectCity(); updateCountdown();
+  fillItineraryCities(); renderItinerary();
+  showTab('itinerary');
+  const firstDay = document.querySelector('.it-day');
+  if(firstDay) firstDay.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Hook up header buttons and onboarding
+(function initTemplatesUI(){
+  const templateBtn   = document.getElementById('templateBtn');
+  const printBtn      = document.getElementById('printBtn');
+  const onboardCard   = document.getElementById('onboardCard');
+  const tplFirstTimer = document.getElementById('tplFirstTimer');
+  const tplAnimeTour  = document.getElementById('tplAnimeTour');
+  const onboardDismiss= document.getElementById('onboardDismiss');
+  const showOnboard   = document.getElementById('showOnboard'); // NEW
+  const initiallyActive = document.querySelector('.tabs .tab.active');
+showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
+
+  // Print
+  if (printBtn) { printBtn.addEventListener('click', ()=> window.print()); }
+
+  // Template picker
+  if (templateBtn) {
+    templateBtn.addEventListener('click', ()=>{
+      const pick = prompt("Choose a template:\n1) 7-Day First-Timer\n2) Anime Tour (Tokyo)\n\nType 1 or 2","");
+      if(pick==='1') applyTemplate('firstTimer');
+      else if(pick==='2') applyTemplate('animeTokyo');
+    });
+  }
+
+  // Show onboarding once unless dismissed previously
+  const seen = localStorage.getItem(ONBOARD_LS);
+  if (!seen && onboardCard) onboardCard.style.display = 'block';
+
+  // One-click template buttons
+  if (tplFirstTimer) tplFirstTimer.addEventListener('click', ()=> applyTemplate('firstTimer'));
+  if (tplAnimeTour)  tplAnimeTour.addEventListener('click',  ()=> applyTemplate('animeTokyo'));
+
+  // Dismiss just hides and remembers your choice
+  if (onboardDismiss) onboardDismiss.addEventListener('click', ()=>{
+    if (onboardCard) onboardCard.style.display='none';
+    localStorage.setItem(ONBOARD_LS, '1');
+  });
+
+  // NEW: bring onboarding back and persist that choice
+  if (showOnboard) showOnboard.addEventListener('click', ()=>{
+    localStorage.removeItem(ONBOARD_LS);     // allow it to show on next load too
+    if (onboardCard) onboardCard.style.display='block';
+  });
+})();
+
 
 // ====== RECOMMENDED (fetch JSON → cards with Add buttons) ======
 let RECOMMENDED = [];
@@ -679,16 +825,19 @@ function cityKeyByName(name){
   const m = data.cities.find(c => c.name.toLowerCase() === String(name||'').toLowerCase());
   return m ? m.key : '';
 }
-function renderRecommendedList(){
-  if(!recList) return;
-  recList.innerHTML = '';
+function currentFilteredRecommended(){
   const citySel = (recCityFilter && recCityFilter.value) || '';
   const catSel  = (recCategoryFilter && recCategoryFilter.value) || '';
-
-  const items = RECOMMENDED.filter(x =>
+  return (RECOMMENDED||[]).filter(x =>
     (!citySel || String(x.city).toLowerCase() === citySel.toLowerCase()) &&
     (!catSel  || String(x.category).toLowerCase() === catSel.toLowerCase())
   );
+}
+function renderRecommendedList(){
+  if(!recList) return;
+  recList.innerHTML = '';
+
+  const items = currentFilteredRecommended();
 
   if(items.length === 0){
     const empty = document.createElement('div');
@@ -712,7 +861,6 @@ function renderRecommendedList(){
     const actions = document.createElement('div'); actions.className='note-actions';
     const addBtn = document.createElement('button'); addBtn.className='btn ok'; addBtn.textContent='Add to Itinerary';
     addBtn.addEventListener('click', ()=>{
-      // Add as POI using current form selections where possible
       const date = itDate.value || prompt('Date (YYYY-MM-DD)?', '');
       if(!date) return;
       const ref = itCity.value || cityKeyByName(x.city);
@@ -739,21 +887,192 @@ function renderRecommended(){
 if(recCityFilter) recCityFilter.addEventListener('change', renderRecommendedList);
 if(recCategoryFilter) recCategoryFilter.addEventListener('change', renderRecommendedList);
 
+// Bulk-add recommended to a given day
+const addAllRecBtn = document.getElementById('addAllRec');
+if (addAllRecBtn){
+  addAllRecBtn.addEventListener('click', ()=>{
+    if (document.body.getAttribute('data-readonly') === '1') return;
+    if (!RECOMMENDED || !RECOMMENDED.length) return;
+
+    const date = itDate.value || prompt('Date (YYYY-MM-DD)?','');
+    if(!date) return;
+
+    const list = currentFilteredRecommended();
+    if(!list.length) { alert('No items match the current filters.'); return; }
+
+    const fallbackRef = itCity.value || '';
+    list.forEach(x=>{
+      const item = { id:newId(), date, time:'', type:'poi', ref: fallbackRef || cityKeyByName(x.city), title: x.name };
+      if (Number.isFinite(+x.lat) && Number.isFinite(+x.lon)) { item.lat = +x.lat; item.lon = +x.lon; }
+      data.itinerary.push(item);
+    });
+
+    save(); renderItinerary();
+    if (state.activeDate === date) showDayOnMap(date);
+    showTab('itinerary');
+  });
+}
+
 fetch('recommended.json')
   .then(r => r.ok ? r.json() : [])
   .then(arr => { RECOMMENDED = Array.isArray(arr) ? arr : []; renderRecommended(); })
   .catch(()=>{ RECOMMENDED=[]; renderRecommended(); });
 
+// ====== WHEN TO VISIT (seasonality data + renderer) =========
+// Values are illustrative, tuned to “feel right” for visitors.
+// crowd: 0=Low, 1=Med, 2=High
+// price: 1..4 (how expensive; more green $ = pricier)
+
+const WHEN_DATA = {
+  japan: {
+    name: 'Japan (overall)',
+    months: [
+      { m:'Jan', hi:8,  lo:1,  crowd:0, price:1 },
+      { m:'Feb', hi:9,  lo:2,  crowd:0, price:1 },
+      { m:'Mar', hi:13, lo:5,  crowd:1, price:2 },
+      { m:'Apr', hi:18, lo:10, crowd:2, price:3 },
+      { m:'May', hi:22, lo:15, crowd:2, price:2 },
+      { m:'Jun', hi:25, lo:19, crowd:1, price:2 },
+      { m:'Jul', hi:29, lo:23, crowd:2, price:3 },
+      { m:'Aug', hi:31, lo:24, crowd:2, price:3 },
+      { m:'Sep', hi:27, lo:21, crowd:1, price:2 },
+      { m:'Oct', hi:22, lo:15, crowd:1, price:2 },
+      { m:'Nov', hi:17, lo:10, crowd:1, price:3 },
+      { m:'Dec', hi:12, lo:5,  crowd:0, price:2 }
+    ]
+  },
+  tokyo: {
+    name: 'Tokyo (Kantō)',
+    months: [
+      { m:'Jan', hi:10, lo:2,  crowd:0, price:1 },
+      { m:'Feb', hi:11, lo:3,  crowd:0, price:1 },
+      { m:'Mar', hi:14, lo:6,  crowd:1, price:2 },
+      { m:'Apr', hi:19, lo:10, crowd:2, price:3 },
+      { m:'May', hi:23, lo:15, crowd:2, price:2 },
+      { m:'Jun', hi:25, lo:19, crowd:1, price:2 },
+      { m:'Jul', hi:29, lo:23, crowd:2, price:3 },
+      { m:'Aug', hi:31, lo:24, crowd:2, price:3 },
+      { m:'Sep', hi:27, lo:22, crowd:1, price:2 },
+      { m:'Oct', hi:22, lo:16, crowd:1, price:2 },
+      { m:'Nov', hi:17, lo:11, crowd:1, price:3 },
+      { m:'Dec', hi:12, lo:6,  crowd:0, price:2 }
+    ]
+  },
+  kansai: {
+    name: 'Kyoto / Osaka (Kansai)',
+    months: [
+      { m:'Jan', hi:8,  lo:1,  crowd:0, price:1 },
+      { m:'Feb', hi:9,  lo:2,  crowd:0, price:1 },
+      { m:'Mar', hi:13, lo:5,  crowd:1, price:2 },
+      { m:'Apr', hi:19, lo:10, crowd:2, price:3 },
+      { m:'May', hi:23, lo:15, crowd:2, price:2 },
+      { m:'Jun', hi:26, lo:20, crowd:1, price:2 },
+      { m:'Jul', hi:30, lo:24, crowd:2, price:3 },
+      { m:'Aug', hi:32, lo:25, crowd:2, price:3 },
+      { m:'Sep', hi:28, lo:22, crowd:1, price:2 },
+      { m:'Oct', hi:23, lo:16, crowd:1, price:2 },
+      { m:'Nov', hi:18, lo:10, crowd:2, price:3 },
+      { m:'Dec', hi:12, lo:6,  crowd:0, price:2 }
+    ]
+  },
+  hokkaido: {
+    name: 'Hokkaidō (Sapporo)',
+    months: [
+      { m:'Jan', hi:-1, lo:-7, crowd:1, price:2 },
+      { m:'Feb', hi:0,  lo:-7, crowd:1, price:2 },
+      { m:'Mar', hi:4,  lo:-3, crowd:1, price:2 },
+      { m:'Apr', hi:11, lo:3,  crowd:1, price:2 },
+      { m:'May', hi:17, lo:8,  crowd:1, price:2 },
+      { m:'Jun', hi:21, lo:13, crowd:1, price:2 },
+      { m:'Jul', hi:24, lo:17, crowd:1, price:2 },
+      { m:'Aug', hi:26, lo:19, crowd:2, price:3 },
+      { m:'Sep', hi:22, lo:15, crowd:1, price:2 },
+      { m:'Oct', hi:16, lo:8,  crowd:1, price:2 },
+      { m:'Nov', hi:8,  lo:1,  crowd:1, price:2 },
+      { m:'Dec', hi:2,  lo:-4, crowd:1, price:2 }
+    ]
+  },
+  okinawa: {
+    name: 'Okinawa (Naha)',
+    months: [
+      { m:'Jan', hi:19, lo:14, crowd:0, price:1 },
+      { m:'Feb', hi:20, lo:14, crowd:0, price:1 },
+      { m:'Mar', hi:22, lo:16, crowd:1, price:2 },
+      { m:'Apr', hi:25, lo:19, crowd:1, price:2 },
+      { m:'May', hi:27, lo:22, crowd:1, price:2 },
+      { m:'Jun', hi:29, lo:25, crowd:1, price:2 },
+      { m:'Jul', hi:32, lo:26, crowd:2, price:3 },
+      { m:'Aug', hi:32, lo:27, crowd:2, price:3 },
+      { m:'Sep', hi:31, lo:26, crowd:1, price:2 },
+      { m:'Oct', hi:28, lo:23, crowd:1, price:2 },
+      { m:'Nov', hi:24, lo:20, crowd:0, price:2 },
+      { m:'Dec', hi:21, lo:16, crowd:0, price:2 }
+    ]
+  }
+};
+
+function crowdLabel(n){ return n===2?'High':(n===1?'Med':'Low'); }
+function crowdClass(n){ return n===2?'high':(n===1?'med':'low'); }
+
+function renderWhen(cityKey){
+  const grid = document.getElementById('whenGrid');
+  if(!grid) return;
+  const city = WHEN_DATA[cityKey] || WHEN_DATA.japan;
+  grid.innerHTML = '';
+
+  city.months.forEach(row=>{
+    const box = document.createElement('div');
+    box.className = 'when-month';
+    box.innerHTML = `
+      <strong>${row.m}</strong>
+      <div class="temp">${row.hi}°C / ${row.lo}°C</div>
+      <div class="crowd ${crowdClass(row.crowd)}">${crowdLabel(row.crowd)}</div>
+      <div class="price-dollars">
+        <span class="dollar ${row.price>=1?'on':'off'}">$</span>
+        <span class="dollar ${row.price>=2?'on':'off'}">$</span>
+        <span class="dollar ${row.price>=3?'on':'off'}">$</span>
+        <span class="dollar ${row.price>=4?'on':'off'}">$</span>
+      </div>
+    `;
+    grid.appendChild(box);
+  });
+}
+
+const whenCitySel = document.getElementById('whenCitySel');
+if (whenCitySel){
+  whenCitySel.addEventListener('change', ()=> renderWhen(whenCitySel.value));
+}
+
+
 // ====== INIT ======
 function init(){
+  // Deep-link tab via ?tab=...
+  const urlTab = getQS('tab');
+  if (urlTab) {
+    const btn = document.querySelector(`.tabs .tab[data-tab="${urlTab}"]`);
+    if (btn) {
+      document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+
+  // Public view via ?public=1 or ?mode=public
+  const isPublic = getQS('public') === '1' || getQS('mode') === 'public';
+  if (isPublic) setReadOnlyMode(true);
+
+    // Tips: When to visit (default to Japan overall)
+  renderWhen((document.getElementById('whenCitySel')?.value) || 'japan');
+
+  const banner = document.getElementById('publicBanner');
+if (banner) banner.style.display = isPublic ? 'block' : 'none';
+
+
   renderRoute(); drawMap(); fillBudgetCities(); renderBudget();
   renderChecklist(); renderNotes(); selectCity(); updateCountdown();
   fillItineraryCities(); renderItinerary();
-  // initial tab (first button or budget fallback)
+
   const initiallyActive = document.querySelector('.tabs .tab.active');
   showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
   map.fitBounds(JAPAN_BOUNDS, { padding:[40,40] });
 }
 init();
-
-// (Theme switcher removed) — single-theme build uses static JDM styles.
