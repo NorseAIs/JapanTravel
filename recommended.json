@@ -1,0 +1,16 @@
+[
+  {
+    "city": "Tokyo",
+    "category": "Destination",
+    "name": "Shibuya Crossing",
+    "description": "World's busiest pedestrian crossing and a Tokyo icon.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Shibuya_Crossing_2018.jpg"
+  },
+  {
+    "city": "Kyoto",
+    "category": "Destination",
+    "name": "Fushimi Inari Taisha",
+    "description": "Famous shrine with thousands of red torii gates.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Fushimi_Inari_torii.jpg"
+  }
+]
