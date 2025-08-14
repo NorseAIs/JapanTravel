@@ -1,499 +1,759 @@
-/* ============= TOKYO NIGHT THEME (stable) ============= */
+// ====== CONFIG / DATA ======
+const defaultData = {
+  year: 2026,
+  departure: "",
+  cities: [
+    { key:"tokyo",     name:"Tokyo",     lat:35.6895, lon:139.6917, plan:"Meet friends, Akihabara, Evangelion Store Tokyo-01", notes:"", dates:"", stay:"", transport:"Arrival", sideTrip:false },
+    { key:"kawagoe",   name:"Kawagoe",   lat:35.9251, lon:139.4850, plan:"Little Edo streets, sweet potato snacks", notes:"Day/half-day from Tokyo", dates:"", stay:"", transport:"Tobu Tojo/Seibu", sideTrip:true },
+    { key:"nagoya",    name:"Nagoya",    lat:35.1815, lon:136.9066, plan:"Miso katsu / hitsumabushi", notes:"Give Nagoya more time", dates:"", stay:"", transport:"Shinkansen", sideTrip:false },
+    { key:"kanazawa",  name:"Kanazawa",  lat:36.5613, lon:136.6562, plan:"Kenroku-en / Omicho Market", notes:"", dates:"", stay:"", transport:"Hokuriku Shinkansen (via Tsuruga)", sideTrip:false },
+    { key:"kyoto",     name:"Kyoto",     lat:35.0116, lon:135.7681, plan:"Cozy vibes", notes:"", dates:"", stay:"", transport:"Limited Express / Shinkansen", sideTrip:false },
+    { key:"nara",      name:"Nara",      lat:34.6851, lon:135.8049, plan:"Tōdai-ji", notes:"Likely day trip from Kyoto/Osaka", dates:"", stay:"", transport:"Kintetsu/JR", sideTrip:true },
+    { key:"hiroshima", name:"Hiroshima", lat:34.3853, lon:132.4553, plan:"Peace Memorial / okonomiyaki", notes:"Friends also going here", dates:"", stay:"", transport:"Shinkansen", sideTrip:false },
+    { key:"osaka",     name:"Osaka",     lat:34.6937, lon:135.5023, plan:"Food tour, Dotonbori", notes:"", dates:"", stay:"", transport:"", sideTrip:false }
+  ],
+  budget: [],
+  checklist: ["Passport", "eSIM (Ubigi)", "IC card (Suica/PASMO)", "Gym bands"],
+  notes: [],
+  itinerary: []
+};
 
-/* Theme tokens */
-:root{
-  --bg:#0b0f1a;
-  --panel:#0a0d16;
-  --text:#e5e7eb;
-  --muted:#94a3b8;
+// ====== STORAGE / STATE ======
+const LS_KEY = "jp_trip_planner_leaflet_jptheme_v6";
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
 
-  --border:rgba(207,192,165,0.4);
-  --border-strong:rgba(179,164,137,0.6);
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    const base = structuredClone(defaultData);
+    if(!raw) return base;
+    const d = JSON.parse(raw);
 
-  --ink-1:#f8f1d6;
-  --ink-2:#f2e6bf;
+    // Normalize shapes from older saves
+    d.cities = (d.cities && d.cities.length ? d.cities.map(c=>({ sideTrip:false, ...c })) : base.cities)
+      // drop any legacy friend cities that may be in saved data
+      .filter(c => !c.friend);
 
-  /* JDM palette */
-  --jdm-green:#00ff9d;
-  --jdm-purple:#8b5cf6;
-
-  --accent:var(--jdm-green);
-  --accent-2:var(--jdm-purple);
-  --accent-ok:var(--jdm-green);
-  --accent-warn:#ff5e5e; /* softer neon red */
-
-  --jp-red:#ff3b3b;
-  --jp-gold:#b3b3b3;
-
-  --shadow:0 6px 24px rgba(0,0,0,.35);
+    d.checklist = (d.checklist||base.checklist).map(x => typeof x === 'string' ? ({text:x, done:false}) : x);
+    if (d.shared && (!d.notes || d.notes.length===0)) {
+      d.notes = [{ title:'Shared', tag:'', body:String(d.shared), ts: Date.now() }];
+      delete d.shared;
+    }
+    d.itinerary = Array.isArray(d.itinerary) ? d.itinerary : [];
+    return {...base, ...d};
+  }catch(e){
+    return structuredClone(defaultData);
+  }
 }
+let data = load();
+const state = { selected: data.cities[0].key, dragging: null, activeDate:null };
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
-/* Dark Japan background */
-body.jp-max{
-  background:
-    radial-gradient(1200px 800px at 10% -10%, #0f172a 0%, transparent 60%),
-    radial-gradient(1000px 700px at 120% 30%, #0a1020 0%, transparent 70%),
-    linear-gradient(180deg,#0b0f1a,#0a0f1d 60%),
-    repeating-linear-gradient(0deg,#0f172a 0 10px,#0e1628 10px 20px);
-  background-blend-mode: overlay, overlay, normal, multiply;
-}
+// ====== HEADER / COUNTDOWN ======
+const departInput = $('#departInput');
+const countdown = $('#countdown');
+const yearSpan = $('#yearSpan');
 
-/* ====== Layout ====== */
-.app{
-  position:relative; z-index:1;
-  display:grid;
-  grid-template-columns:300px 1fr;
-  grid-template-rows:auto 1fr;
-  min-height:100vh;
+function normalizeYMD(d){
+  if(!(d instanceof Date) || isNaN(d)) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
-header{
-  grid-column:1/-1;
-  display:flex; align-items:center; gap:12px; justify-content:space-between;
-  padding:12px 16px;
-  border-bottom:1px solid var(--border);
-  background:rgba(6,10,20,.7);
-  backdrop-filter:blur(6px);
+function setYearFromDeparture(){
+  if(data.departure){
+    const y = new Date(data.departure).getFullYear();
+    if(!isNaN(y)) { yearSpan.textContent = y; return; }
+  }
+  yearSpan.textContent = data.year;
 }
-.title{
-  font-weight:700; color:#fca5a5; display:flex; align-items:center; gap:6px;
-}
-.mincho{ font-family:"Noto Serif JP", serif; letter-spacing:.03em; margin-right:6px }
-.hinomaru{ display:inline-block; width:14px; height:14px; border-radius:50%; background:var(--jp-red); box-shadow:0 0 0 1px #0006 inset }
-.divider{ width:1px; height:14px; background:#334155; display:inline-block; margin:0 8px }
-
-.header-center{ flex:1; text-align:center }
-.countdown-widget{
-  display:inline-block;
-  font-weight:800; letter-spacing:.02em;
-  color:var(--jp-gold);
-  padding:6px 12px;
-  border-radius:999px;
-  background:linear-gradient(180deg,var(--ink-1),var(--ink-2));
-  border:1px solid var(--border);
-  box-shadow:0 2px 0 #0006, inset 0 0 0 1px #000;
-}
-
-/* ====== Sidebar ====== */
-aside{ border-right:1px solid var(--border); background:rgba(255,255,255,.03) }
-.sidebar{ padding:12px; display:flex; flex-direction:column; gap:12px }
-.section{
-  background:rgba(255,255,255,.04);
-  border:1px solid var(--border);
-  border-radius:14px;
-}
-.section h3{
-  margin:0; padding:8px 10px;
-  border-bottom:1px solid var(--border);
-  font-size:14px; color:#f1f5f9;
-}
-.route{ padding:6px 8px; display:flex; flex-direction:column; gap:6px }
-.route button{
-  width:100%; text-align:left;
-  padding:10px 12px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg,#0b1220,#0a0f1d);
-  color:var(--text); cursor:pointer;
-  transition:transform .12s ease, border-color .12s ease, background .12s ease;
-}
-.route button:hover{ border-color:var(--border-strong) }
-.route button.active{
-  background:linear-gradient(180deg,#991b1b,#7f1d1d);
-  border-color:#991b1b;
-  color:#fff; transform:scale(1.03);
-}
-.badge{ font-size:11px; color:#fde68a; background:#7c2d12; padding:2px 8px; border-radius:999px; margin-left:6px }
-.friend{ color:#f59e0b }
-
-/* ====== Main / Cards ====== */
-main{ padding:14px }
-.content{ display:grid; grid-template-columns:1.1fr .9fr; gap:14px }
-.card{
-  background:rgba(255,255,255,.04);
-  border:1px solid var(--border);
-  border-radius:16px; overflow:hidden;
-  box-shadow:var(--shadow);
-}
-.card h3{
-  margin:0; font-size:14px; color:#f8fafc;
-  border-bottom:1px solid var(--border);
-  padding:8px 10px;
-  background:linear-gradient(180deg,#0b1020,#08101f);
-}
-.card h3::before{ content:"⛩ "; color:var(--jp-gold) }
-.card .inner{ padding:10px }
-.mtop{ margin-top:14px }
-
-/* ====== Map ====== */
-.mapWrap{ position:relative; height:520px }
-#leafletMap{ width:100%; height:100%; border-radius:12px; outline:2px solid #172036; box-shadow:0 2px 18px #0008 }
-.leaflet-container{ background:#0a1020 }
-
-/* Ema-style city tooltips */
-.leaflet-tooltip.city-label{
-  background:linear-gradient(180deg,#f8f1d6,#e7d8a1);
-  border:1px solid #7c2d12; color:#1f2937;
-  padding:4px 8px; border-radius:4px; box-shadow:0 2px 0 #0004;
-  font-weight:700; font-size:12px;
-}
-.leaflet-tooltip.city-label:before{
-  content:""; position:absolute; left:-6px; top:8px; width:0; height:0;
-  border-top:6px solid transparent; border-bottom:6px solid transparent; border-right:6px solid #7c2d12;
+function updateCountdown(){
+  if(!data.departure){ countdown.textContent = "Set a departure date →"; setYearFromDeparture(); return; }
+  const today = normalizeYMD(new Date());
+  const target = normalizeYMD(new Date(data.departure));
+  if(!target){ countdown.textContent = "Set a valid date →"; return; }
+  const diffMs = target - today;
+  const diffDays = Math.ceil(diffMs / 86400000);
+  if(diffDays > 1){ countdown.textContent = `✈️ ${diffDays} days until departure`; }
+  else if(diffDays === 1){ countdown.textContent = '✈️ 1 day until departure'; }
+  else if(diffDays === 0){ countdown.textContent = '✈️ Today — have a great flight!'; }
+  else { countdown.textContent = `Itinerary live · ${Math.abs(diffDays)} day${Math.abs(diffDays)===1?'':'s'} since departure`; }
+  setYearFromDeparture();
 }
 
-/* Selected-city pulse */
-.pulse-ring{
-  width:22px; height:22px; border-radius:50%;
-  border:3px solid var(--jp-red);
-  position:absolute; transform:translate(-50%,-50%);
-  animation:pulse 900ms ease-out 1;
-  pointer-events:none;
-}
-@keyframes pulse{
-  0%{ transform:translate(-50%,-50%) scale(.6); opacity:.95 }
-  100%{ transform:translate(-50%,-50%) scale(2.6); opacity:0 }
+yearSpan.textContent = data.year;
+if(data.departure) departInput.value = data.departure;
+departInput.addEventListener('change',()=>{ data.departure = departInput.value; save(); updateCountdown(); });
+updateCountdown();
+setInterval(updateCountdown, 60*1000);
+
+// ====== SIDEBAR / ROUTE ======
+const routeList = $('#routeList');
+
+// If the old checkbox exists in HTML, hide its container (product build)
+const toggleFriend = $('#toggleFriend');
+if (toggleFriend) {
+  const wrap = toggleFriend.closest('.inner') || toggleFriend.parentElement;
+  if (wrap) wrap.style.display = 'none';
 }
 
-.legend{
-  position:absolute; right:10px; bottom:10px;
-  background:rgba(0,0,0,.5);
-  border:1px solid var(--border);
-  padding:6px 8px; border-radius:10px;
-  color:#cbd5e1; font-size:12px;
+function visibleCities(){ return data.cities; }
+
+function renderRoute(){
+  routeList.innerHTML = '';
+  visibleCities().forEach((c,i)=>{
+    const b = document.createElement('button');
+    b.textContent = `${i+1}. ${c.name}`;
+    if(c.sideTrip){
+      const s=document.createElement('span');
+      s.className='badge';
+      s.textContent='side trip';
+      b.appendChild(s);
+    }
+    b.className = 'draggable';
+    if(c.key===state.selected) b.classList.add('active');
+    b.draggable = true;
+    b.addEventListener('click',()=>{ state.selected=c.key; selectCity(); zoomAndPulse(c); highlightItineraryForCity(c.key); });
+    b.addEventListener('dragstart', (e)=>{ state.dragging = c.key; e.dataTransfer.setData('text/plain', c.key); });
+    b.addEventListener('dragover',(e)=>e.preventDefault());
+    b.addEventListener('drop',(e)=>{ e.preventDefault(); reorder(state.dragging,c.key); state.dragging=null; });
+    routeList.appendChild(b);
+  });
+}
+function reorder(fromKey,toKey){
+  const full = data.cities;
+  const fi=full.findIndex(c=>c.key===fromKey), ti=full.findIndex(c=>c.key===toKey);
+  if(fi<0||ti<0) return;
+  const [moved] = full.splice(fi,1);
+  full.splice(ti,0,moved);
+  save(); renderRoute(); drawMap(); fillBudgetCities();
 }
 
-/* ====== Forms ====== */
-.grid.two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px }
-.grid.two.span2{ grid-column:1/-1 }
-label{ font-size:12px; color:#cbd5e1 }
+// ====== MAP (Leaflet + OSM, bounded to Japan) ======
+const COLOR_MAIN = '#3b82f6';
+const COLOR_SIDE = '#ef4444';
+const JAPAN_BOUNDS = L.latLngBounds([24.0, 122.0], [46.5, 146.0]);
 
-input,textarea,select{
-  width:100%;
-  background:linear-gradient(180deg,#0c1222,#0a0e18);
-  color:var(--text);
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:10px;
-}
-input::placeholder,textarea::placeholder{ color:#8ea0b8 }
+const map = L.map('leafletMap', {
+  zoomControl: true,
+  scrollWheelZoom: true,
+  worldCopyJump: false,
+  maxBounds: JAPAN_BOUNDS,
+  maxBoundsViscosity: 0.7,
+});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:12, minZoom:4, attribution:'© OpenStreetMap contributors' }).addTo(map);
 
-/* Dark select dropdown (popup) */
-select{ appearance:none; background-image:
-  linear-gradient(180deg,#0c1222,#0a0e18);
-}
-select option{
-  background:#0f172a; color:#e5e7eb;
-}
+const routeLayer  = L.layerGroup().addTo(map);
+const cityLayer   = L.layerGroup().addTo(map);
+const poiLayer    = L.layerGroup().addTo(map);
+const dayRouteLayer = L.layerGroup().addTo(map);
 
-/* Focus state (keyboard/accessibility) */
-input:focus, textarea:focus, select:focus, .btn:focus, .route button:focus{
-  outline:2px solid #334155; outline-offset:2px;
-  border-color:#334155;
+function dotStyle(c){
+  return { radius: 7, color:'#111827', weight:2, fillColor: (c.sideTrip ? COLOR_SIDE : COLOR_MAIN), fillOpacity:1 };
 }
+let markerIndex = new Map();
 
-/* ====== Tabs ====== */
-.tabs{ display:flex; gap:8px; border-bottom:1px solid var(--border); padding:8px 8px 0 }
-.tab{
-  padding:8px 10px;
-  border:1px solid var(--border);
-  border-bottom:none;
-  border-radius:10px 10px 0 0;
-  background:linear-gradient(180deg,#0c1324,#0a101b);
-  cursor:pointer; color:#e2e8f0;
-  transition:background .12s ease, transform .12s ease;
-}
-.tab:hover{ transform:translateY(-1px) }
-.tab.active{
-  color:#fff;
-  background:linear-gradient(180deg,var(--accent-2),var(--accent));
-  border-color:transparent;
-}
-.tabPanel{ padding:10px }
+function drawMap(){
+  routeLayer.clearLayers(); cityLayer.clearLayers();
+  markerIndex.clear();
 
-/* ====== Budget table ====== */
-.table-clean{ width:100%; border-collapse:separate; border-spacing:0 }
-.table-clean thead th{
-  position:sticky; top:0;
-  background:linear-gradient(180deg,#1b2450,#141a34);
-  z-index:1; border-bottom:1px solid var(--border);
-  padding:12px 10px; font-weight:800; color:#f8fafc;
-  letter-spacing:.02em; font-feature-settings:"tnum" 1,"lnum" 1;
-}
-.table-clean tbody td{
-  padding:12px 10px; border-bottom:1px solid var(--border); vertical-align:middle;
-  font-feature-settings:"tnum" 1,"lnum" 1;
-}
-.table-clean tbody tr:nth-child(even){ background:rgba(255,255,255,.03) }
-.table-clean tbody tr:hover{ background:rgba(255,255,255,.06) }
-.table-clean tfoot td{
-  padding:12px 10px; border-top:1px solid var(--border); font-weight:800;
-  background:linear-gradient(180deg,#10172a,#0c1426)
-}
-.num{text-align:right}
-.right{text-align:right}
+  const vis = visibleCities();
+  const mainPoints = vis.map(c => [c.lat, c.lon]);
+  if (mainPoints.length >= 2) L.polyline(mainPoints, { weight: 4, color: COLOR_MAIN, opacity: 0.9 }).addTo(routeLayer);
 
-/* ====== Buttons ====== */
-.actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px }
-.btn{
-  padding:10px 12px; border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg,#0b1220,#0a0f1d);
-  color:var(--text); cursor:pointer;
-  box-shadow:0 2px 0 #0006;
-  transition:transform .12s ease, filter .12s ease, background .12s ease;
-}
-.btn:hover{ filter:brightness(1.05) }
-.btn.primary{ background:linear-gradient(180deg,var(--accent-2),var(--accent)); border-color:transparent }
-.btn.ok{ background:linear-gradient(180deg,var(--accent-ok),#065f46); border-color:transparent }
-.btn.warn{ background:linear-gradient(180deg,var(--accent-warn),#b45309); border-color:transparent }
+  vis.forEach((c, i) => {
+    const m = L.circleMarker([c.lat, c.lon], dotStyle(c))
+      .addTo(cityLayer)
+      .bindTooltip(`${i+1}. ${c.name}`, { permanent: true, direction: 'right', offset: [10, 0], className: 'city-label' })
+      .on('click', () => { state.selected = c.key; selectCity(); zoomAndPulse(c); highlightItineraryForCity(c.key); });
+    if (c.key === state.selected) m.setStyle({ radius: 10 });
+    markerIndex.set(c.key, m);
+  });
 
-/* ====== Checklist ====== */
-.list{ list-style:none; padding-left:0; margin:0; display:flex; flex-direction:column; gap:6px }
-#tab-checklist .actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px }
-#tab-checklist .actions input{ flex:1 1 260px }
-#checklist{ margin:0; padding:0; display:flex; flex-direction:column; gap:8px; width:100% }
-#checklist li{
-  list-style:none; display:flex; align-items:center; gap:10px;
-  padding:10px; border:1px solid var(--border); border-radius:10px;
-  background:linear-gradient(180deg,#0c1222,#0a0e18);
-}
-#checklist input[type="checkbox"]{ width:18px; height:18px; margin:0 }
-#checklist .item-text{ flex:1 1 auto; line-height:1.35 }
-#checklist .item-text.done{ opacity:.6; text-decoration:line-through }
-#checklist .btn{ margin-left:auto }
+  const fit = vis.map(c => [c.lat, c.lon]);
+  if (fit.length) map.fitBounds(fit, { padding: [40, 40] });
 
-/* ====== Shared Notes ====== */
-#tab-shared .actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px }
-#tab-shared .actions input{ flex:1 1 260px }
-.notes-grid{
-  display:grid; grid-template-columns:repeat( auto-fit, minmax(280px,1fr) );
-  gap:12px; margin-top:12px;
-}
-.note-card{
-  background:linear-gradient(180deg,#0c1222,#0a0e18);
-  border:1px solid var(--border);
-  border-radius:12px; padding:12px;
-  display:flex; flex-direction:column; gap:8px;
-}
-.note-head{ display:flex; align-items:center; justify-content:space-between; gap:8px }
-.note-title{ font-weight:700 }
-.note-meta{ font-size:12px; color:var(--muted) }
-.note-body{ white-space:pre-wrap; line-height:1.45 }
-.note-tags{ font-size:12px; color:var(--jp-gold) }
-.note-actions{ display:flex; gap:8px; justify-content:flex-end }
-
-/* ====== Itinerary (visual polish only) ====== */
-.it-actions input, .it-actions select{ max-width:170px }
-#itineraryList{ display:flex; flex-direction:column; gap:10px }
-.it-day{
-  background:#111827;
-  border:1px solid var(--border);
-  border-radius:8px;
-}
-.it-day .it-head{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:10px; cursor:pointer; user-select:none; background:#0d1424;
-}
-.it-day .it-head h3{ margin:0; font-size:14px; color:#f87171 }
-.it-day .it-items{ padding:6px 10px 10px 10px; display:flex; flex-direction:column; gap:8px }
-.it-item{
-  display:flex; align-items:center; gap:10px; padding:8px 10px;
-  background:linear-gradient(180deg,#0c1222,#0a0e18);
-  border:1px solid var(--border); border-radius:8px;
-}
-.it-item.dragging{ opacity:.6 }
-.it-type{ font-size:12px; color:var(--jp-gold); min-width:46px; text-align:center }
-.it-time{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:#93c5fd; min-width:48px }
-.it-title{ flex:1 1 auto }
-.it-del{ margin-left:auto }
-
-/* ====== Responsive ====== */
-@media (max-width: 960px){
-  .app{ grid-template-columns:1fr }
-  aside{ order:2 }
-  main{ order:3 }
+  if (state.activeDate) showDayOnMap(state.activeDate);
 }
 
-/* ====== Motion preferences ====== */
-@media (prefers-reduced-motion: reduce){
-  *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important }
+let pulseNode = null;
+function zoomAndPulse(city){
+  map.setView([city.lat, city.lon], Math.max(map.getZoom(), 7), { animate: true });
+  const m = markerIndex.get(city.key); if (m) m.setStyle({ radius: 11 });
+
+  if (pulseNode){ pulseNode.remove(); pulseNode = null; }
+  const pt = map.latLngToContainerPoint([city.lat, city.lon]);
+  const wrap = document.createElement("div");
+  wrap.className = "pulse-ring";
+  wrap.style.left = `${pt.x}px`; wrap.style.top = `${pt.y}px`;
+  map.getContainer().appendChild(wrap);
+  pulseNode = wrap;
+  setTimeout(()=>{ pulseNode?.remove(); pulseNode=null; }, 900);
+}
+map.on('move', ()=>{
+  if (!pulseNode) return;
+  const c = currentCity();
+  const pt = map.latLngToContainerPoint([c.lat, c.lon]);
+  pulseNode.style.left = `${pt.x}px`; pulseNode.style.top = `${pt.y}px`;
+});
+
+// ====== CITY EDITOR ======
+const cityName=$('#cityName'), cityDates=$('#cityDates'), cityStay=$('#cityStay'),
+      cityTransport=$('#cityTransport'), cityPlan=$('#cityPlan'), cityNotes=$('#cityNotes');
+const saveCityBtn=$('#saveCity'), delCityBtn=$('#deleteCity'), saveHint=$('#saveHint');
+
+function currentCity(){ return data.cities.find(c=>c.key===state.selected) || data.cities[0]; }
+
+function selectCity(){
+  renderRoute(); drawMap();
+  const c=currentCity();
+  cityName.value=c.name; cityDates.value=c.dates||''; cityStay.value=c.stay||'';
+  cityTransport.value=c.transport||''; cityPlan.value=c.plan||''; cityNotes.value=c.notes||'';
+}
+saveCityBtn.addEventListener('click',()=>{
+  const c=currentCity();
+  c.name=cityName.value.trim()||c.name; c.dates=cityDates.value; c.stay=cityStay.value;
+  c.transport=cityTransport.value; c.plan=cityPlan.value; c.notes=cityNotes.value;
+  save(); saveHint.textContent='Saved'; setTimeout(()=>saveHint.textContent='',1000);
+  renderRoute(); drawMap(); fillBudgetCities();
+});
+delCityBtn.addEventListener('click',()=>{
+  const idx=data.cities.findIndex(x=>x.key===state.selected);
+  if(idx>-1){ data.cities.splice(idx,1); save(); state.selected = data.cities[0]?.key || null; renderRoute(); drawMap(); fillBudgetCities(); selectCity(); }
+});
+
+// ====== TABS (robust) ======
+const tabButtons = $$('.tabs .tab');
+const TAB_KEYS = tabButtons.map(btn => btn.dataset.tab);
+function showTab(id){
+  TAB_KEYS.forEach(k => {
+    const panel = document.getElementById('tab-' + k);
+    if (panel) panel.style.display = (k === id) ? 'block' : 'none';
+  });
 }
 
-/* === Japanese feel — minimal, layout-safe additions (append to main styles.css) === */
+tabButtons.forEach(t => t.addEventListener('click', () => {
+  tabButtons.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  showTab(t.dataset.tab);
+}));
 
-/* Head title in mincho + tiny kamon */
-.title{
-  font-family:"Noto Serif JP", serif;
-  color:var(--jp-red);
+// ====== BUDGET ======
+const budgetCity=$('#budgetCity'), bItem=$('#bItem'), bCost=$('#bCost'),
+      bPeople=$('#bPeople'), addBudget=$('#addBudget'),
+      saveBudget=$('#saveBudget'), cancelEdit=$('#cancelEdit'),
+      budgetTable=$('#budgetTable tbody'),
+      totalCost=$('#totalCost'), totalPer=$('#totalPer');
+let editingIndex = null;
+
+function fillBudgetCities(){
+  budgetCity.innerHTML='';
+  visibleCities().forEach(c=>{
+    const o=document.createElement('option'); o.value=c.key; o.textContent=c.name; budgetCity.appendChild(o);
+  });
 }
-.title::after{
-  content:"\2738"; /* 8‑petal rosette */
-  margin-left:8px; color:var(--jp-gold); opacity:.85; font-size:12px;
+function cityNameByKey(k){ const c=data.cities.find(x=>x.key===k); return c?c.name:k; }
+function renderBudget(){
+  budgetTable.innerHTML=''; let sum=0, per=0;
+  data.budget.forEach((b,idx)=>{
+    const tr=document.createElement('tr');
+    const perPerson = b.people? Math.round(b.cost / b.people) : b.cost;
+    sum += b.cost; per += perPerson;
+    tr.innerHTML = `
+      <td>${cityNameByKey(b.city)}</td>
+      <td>${b.item}</td>
+      <td class="num">${b.cost.toLocaleString()}</td>
+      <td class="num">${b.people}</td>
+      <td class="num">${perPerson.toLocaleString()}</td>
+      <td>
+        <button class="btn ok" data-edit="${idx}">Edit</button>
+        <button class="btn" data-del="${idx}">Delete</button>
+      </td>`;
+    budgetTable.appendChild(tr);
+  });
+  totalCost.textContent=sum.toLocaleString(); totalPer.textContent=per.toLocaleString();
+
+  budgetTable.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click',()=>{
+    const i=+btn.getAttribute('data-del'); data.budget.splice(i,1); save(); renderBudget();
+    if(editingIndex===i) resetBudgetForm();
+  }));
+  budgetTable.querySelectorAll('button[data-edit]').forEach(btn=>btn.addEventListener('click',()=>{
+    const i=+btn.getAttribute('data-edit'); const row=data.budget[i];
+    editingIndex=i;
+    budgetCity.value=row.city; bItem.value=row.item; bCost.value=row.cost; bPeople.value=row.people;
+    addBudget.style.display='none'; saveBudget.style.display='inline-block'; cancelEdit.style.display='inline-block';
+  }));
+}
+function resetBudgetForm(){
+  editingIndex=null; bItem.value=''; bCost.value=''; bPeople.value='1';
+  addBudget.style.display='inline-block'; saveBudget.style.display='none'; cancelEdit.style.display='none';
+}
+addBudget.addEventListener('click',()=>{
+  const city = budgetCity.value; const item=bItem.value.trim(); const cost=parseInt(bCost.value,10)||0; const ppl=parseInt(bPeople.value,10)||1;
+  if(!item||!cost) return;
+  data.budget.push({city,item,cost,people:ppl}); save(); resetBudgetForm(); renderBudget();
+});
+saveBudget.addEventListener('click',()=>{
+  if(editingIndex==null) return;
+  const city = budgetCity.value; const item=bItem.value.trim(); const cost=parseInt(bCost.value,10)||0; const ppl=parseInt(bPeople.value,10)||1;
+  if(!item||!cost) return;
+  data.budget[editingIndex] = {city,item,cost,people:ppl};
+  save(); resetBudgetForm(); renderBudget();
+});
+cancelEdit.addEventListener('click', resetBudgetForm);
+
+// ====== CHECKLIST ======
+const checklist=$('#checklist'), cItem=$('#cItem'), addCheck=$('#addCheck'), clearChecked=$('#clearChecked');
+function renderChecklist(){
+  checklist.innerHTML='';
+  (data.checklist||[]).forEach((it,idx)=>{
+    const row = (typeof it === 'string') ? {text:it, done:false} : it;
+    data.checklist[idx] = row;
+    const li=document.createElement('li');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!row.done;
+    cb.addEventListener('change',()=>{ data.checklist[idx].done = cb.checked; save(); renderChecklist(); });
+    const span=document.createElement('span'); span.className='item-text'+(row.done?' done':''); span.textContent=row.text;
+    const del=document.createElement('button'); del.className='btn'; del.textContent='×'; del.title='remove';
+    del.addEventListener('click',()=>{ data.checklist.splice(idx,1); save(); renderChecklist(); });
+    li.append(cb, span, del); checklist.appendChild(li);
+  });
+}
+addCheck.addEventListener('click',()=>{ const t=cItem.value.trim(); if(!t) return; data.checklist.push({text:t, done:false}); save(); cItem.value=''; renderChecklist(); });
+clearChecked.addEventListener('click',()=>{ data.checklist=[]; save(); renderChecklist(); });
+
+// ====== SHARED NOTES ======
+const noteTitle = $('#noteTitle'); const noteTag = $('#noteTag'); const noteBody = $('#noteBody');
+const addNoteBtn = $('#addNoteBtn'); const saveNoteBtn = $('#saveNoteBtn'); const cancelNoteBtn = $('#cancelNoteBtn');
+const notesList = $('#notesList');
+let editingNoteIndex = null;
+
+function renderNotes(){
+  notesList.innerHTML='';
+  (data.notes||[]).forEach((n,idx)=>{
+    const card=document.createElement('div'); card.className='note-card';
+    const head=document.createElement('div'); head.className='note-head';
+    const t=document.createElement('div'); t.className='note-title'; t.textContent=n.title || '(Untitled)';
+    const meta=document.createElement('div'); meta.className='note-meta'; meta.textContent=new Date(n.ts||Date.now()).toLocaleDateString();
+    head.append(t, meta);
+    const body=document.createElement('div'); body.className='note-body'; body.textContent=n.body||'';
+    const tags=document.createElement('div'); tags.className='note-tags'; tags.textContent = n.tag ? `#${n.tag}` : '';
+    const actions=document.createElement('div'); actions.className='note-actions';
+    const edit=document.createElement('button'); edit.className='btn ok'; edit.textContent='Edit';
+    edit.addEventListener('click',()=>{ editingNoteIndex=idx; noteTitle.value=n.title||''; noteTag.value=n.tag||''; noteBody.value=n.body||''; addNoteBtn.style.display='none'; saveNoteBtn.style.display='inline-block'; cancelNoteBtn.style.display='inline-block'; });
+    const del=document.createElement('button'); del.className='btn'; del.textContent='Delete';
+    del.addEventListener('click',()=>{ data.notes.splice(idx,1); save(); renderNotes(); });
+    actions.append(edit, del);
+    card.append(head, body); if(n.tag) card.append(tags); card.append(actions); notesList.appendChild(card);
+  });
+}
+function resetNoteForm(){ editingNoteIndex=null; noteTitle.value=''; noteTag.value=''; noteBody.value=''; addNoteBtn.style.display='inline-block'; saveNoteBtn.style.display='none'; cancelNoteBtn.style.display='none'; }
+addNoteBtn.addEventListener('click',()=>{ const title=noteTitle.value.trim(), tag=noteTag.value.trim(), body=noteBody.value.trim(); if(!title && !body) return; data.notes.unshift({ title, tag, body, ts: Date.now() }); save(); resetNoteForm(); renderNotes(); });
+saveNoteBtn.addEventListener('click',()=>{ if(editingNoteIndex==null) return; const title=noteTitle.value.trim(), tag=noteTag.value.trim(), body=noteBody.value.trim(); data.notes[editingNoteIndex]={ title, tag, body, ts: Date.now() }; save(); resetNoteForm(); renderNotes(); });
+cancelNoteBtn.addEventListener('click', resetNoteForm);
+
+// ====== ITINERARY (↔ Map) ======
+const itDate=$('#itDate'), itTime=$('#itTime'), itType=$('#itType'), itCity=$('#itCity'), itTitle=$('#itTitle'), itLat=$('#itLat'), itLon=$('#itLon');
+const addItineraryBtn = $('#addItinerary');
+const itineraryList = $('#itineraryList');
+
+function fillItineraryCities(){
+  itCity.innerHTML='';
+  visibleCities().forEach(c=>{
+    const o=document.createElement('option'); o.value=c.key; o.textContent=c.name; itCity.appendChild(o);
+  });
+}
+function newId(){ return 'it_'+Math.random().toString(36).slice(2,9); }
+function sortByTimeThenIndex(a,b){
+  const ta=(a.time||''), tb=(b.time||'');
+  if(ta===tb) return 0;
+  return ta < tb ? -1 : 1;
+}
+function groupByDate(list){
+  const g={}; list.forEach(x=>{ (g[x.date]??=[]).push(x); });
+  Object.keys(g).forEach(d=> g[d].sort(sortByTimeThenIndex));
+  return g;
+}
+function renderItinerary(){
+  itineraryList.innerHTML='';
+  const g = groupByDate(data.itinerary||[]);
+  Object.keys(g).sort().forEach(date=>{
+    const dayWrap = document.createElement('div'); dayWrap.className='it-day';
+    const head = document.createElement('div'); head.className='it-head';
+    const h3   = document.createElement('h3'); h3.textContent = new Date(date).toDateString();
+    const btn  = document.createElement('button'); btn.className='btn'; btn.textContent='Focus on map';
+    head.append(h3, btn); dayWrap.appendChild(head);
+
+    const itemsWrap = document.createElement('div'); itemsWrap.className='it-items'; itemsWrap.dataset.date = date;
+
+    g[date].forEach(item=>{
+      const el = document.createElement('div'); el.className='it-item'; el.draggable=true; el.dataset.id=item.id;
+
+      // view row
+      const type = document.createElement('div'); type.className='it-type'; type.textContent=item.type;
+      const time = document.createElement('div'); time.className='it-time'; time.textContent=item.time||'';
+      const title= document.createElement('div'); title.className='it-title';
+      title.textContent = item.type==='city' ? cityNameByKey(item.ref) : (item.title||'(Untitled)');
+
+      const edit = document.createElement('button'); edit.className='btn ok'; edit.textContent='Edit';
+      const del  = document.createElement('button'); del.className='btn it-del'; del.textContent='×';
+
+      el.append(type, time, title, edit, del);
+      itemsWrap.appendChild(el);
+
+      // focus ↔ map
+      el.addEventListener('click', (e)=>{ if(e.target===edit||e.target===del) return; focusItemOnMap(item); });
+
+      // delete
+      del.addEventListener('click', ()=>{
+        data.itinerary = data.itinerary.filter(x=>x.id!==item.id); save(); renderItinerary(); if(state.activeDate===date) showDayOnMap(date);
+      });
+
+      // inline edit
+      edit.addEventListener('click', ()=>{
+        // replace content with inline form
+        el.innerHTML = '';
+        const typeSel = document.createElement('select');
+        typeSel.innerHTML = `
+          <option value="city" ${item.type==='city'?'selected':''}>city</option>
+          <option value="poi" ${item.type==='poi'?'selected':''}>poi</option>
+          <option value="note" ${item.type==='note'?'selected':''}>note</option>
+        `;
+        const timeIn = document.createElement('input'); timeIn.type='time'; timeIn.value=item.time||'';
+        const titleIn= document.createElement('input'); titleIn.type='text'; titleIn.placeholder='Title (POI/Note)'; titleIn.value=item.title||'';
+        const citySel= document.createElement('select');
+        citySel.innerHTML = visibleCities().map(c=>`<option value="${c.key}" ${c.key===item.ref?'selected':''}>${c.name}</option>`).join('');
+        const latIn  = document.createElement('input'); latIn.type='number'; latIn.step='any'; latIn.placeholder='Lat'; latIn.value=(item.lat ?? '');
+        const lonIn  = document.createElement('input'); lonIn.type='number'; lonIn.step='any'; lonIn.placeholder='Lon'; lonIn.value=(item.lon ?? '');
+        const saveBtn= document.createElement('button'); saveBtn.className='btn ok'; saveBtn.textContent='Save';
+        const cancel = document.createElement('button'); cancel.className='btn'; cancel.textContent='Cancel';
+
+        const dateLabel = document.createElement('div'); dateLabel.className='it-type'; dateLabel.textContent = new Date(date).toDateString();
+
+        function syncVis(){
+          const v = typeSel.value;
+          citySel.style.display = (v==='city'||v==='poi')?'':'none';
+          titleIn.style.display = (v!=='city')?'':'none';
+          latIn.style.display   = (v==='poi')?'':'none';
+          lonIn.style.display   = (v==='poi')?'':'none';
+        }
+        typeSel.addEventListener('change', syncVis); syncVis();
+
+        el.append(dateLabel, typeSel, timeIn, titleIn, citySel, latIn, lonIn, saveBtn, cancel);
+
+        cancel.addEventListener('click', ()=> renderItinerary());
+
+        saveBtn.addEventListener('click', ()=>{
+          // write back
+          item.type = typeSel.value;
+          item.time = timeIn.value || '';
+          if(item.type==='city'){
+            item.ref = citySel.value; delete item.title; delete item.lat; delete item.lon;
+          } else if(item.type==='poi'){
+            item.ref = citySel.value || '';
+            item.title = titleIn.value.trim() || 'POI';
+            const la = parseFloat(latIn.value), lo = parseFloat(lonIn.value);
+            if(Number.isFinite(la) && Number.isFinite(lo)){ item.lat=la; item.lon=lo; } else { delete item.lat; delete item.lon; }
+          } else { // note
+            item.title = titleIn.value.trim() || 'Note';
+            delete item.ref; delete item.lat; delete item.lon;
+          }
+          save(); renderItinerary(); if(state.activeDate===date) showDayOnMap(date);
+        });
+      });
+
+      // drag within day
+      el.addEventListener('dragstart', ()=>{ el.classList.add('dragging'); });
+      el.addEventListener('dragend',   ()=>{ el.classList.remove('dragging'); save(); });
+    });
+
+    // dragover to reorder within same day
+    itemsWrap.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      const dragging = itemsWrap.querySelector('.dragging'); if(!dragging) return;
+      const after = Array.from(itemsWrap.querySelectorAll('.it-item:not(.dragging)')).find(sibling=>{
+        const box = sibling.getBoundingClientRect();
+        return e.clientY < box.top + box.height/2;
+      });
+      if(after) itemsWrap.insertBefore(dragging, after); else itemsWrap.appendChild(dragging);
+    });
+    // on drop -> write new order back into data
+    itemsWrap.addEventListener('drop', ()=>{
+      const ids = Array.from(itemsWrap.querySelectorAll('.it-item')).map(el=>el.dataset.id);
+      const rest = (data.itinerary||[]).filter(x=>x.date!==date);
+      const reordered = ids.map(id => g[date].find(x=>x.id===id));
+      data.itinerary = rest.concat(reordered);
+      save(); renderItinerary(); if(state.activeDate===date) showDayOnMap(date);
+    });
+
+    // day header click → map focus
+    head.addEventListener('click', ()=>{ state.activeDate = date; showDayOnMap(date); });
+
+    dayWrap.appendChild(itemsWrap);
+    itineraryList.appendChild(dayWrap);
+  });
+}
+function focusItemOnMap(item){
+  if(item.type==='city'){
+    const c = data.cities.find(x=>x.key===item.ref); if(!c) return;
+    zoomAndPulse(c);
+  } else if(item.type==='poi'){
+    const lat = item.lat, lon=item.lon;
+    const coord = (lat && lon) ? [lat,lon] : null;
+    if(coord){
+      map.setView(coord, Math.max(map.getZoom(), 12), {animate:true});
+      const pt = map.latLngToContainerPoint(coord);
+      const wrap = document.createElement('div'); wrap.className='pulse-ring';
+      wrap.style.left = `${pt.x}px`; wrap.style.top = `${pt.y}px`;
+      map.getContainer().appendChild(wrap); setTimeout(()=>wrap.remove(),900);
+    } else if(item.ref){
+      const c = data.cities.find(x=>x.key===item.ref); if(c) zoomAndPulse(c);
+    }
+  }
+}
+function highlightItineraryForCity(cityKey){
+  const item = (data.itinerary||[]).find(x=> x.type==='city' && x.ref===cityKey);
+  if(!item) return;
+  const el = itineraryList.querySelector(`.it-item[data-id="${item.id}"]`);
+  if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('dragging'); setTimeout(()=>el.classList.remove('dragging'),600); }
+}
+function showDayOnMap(date){
+  state.activeDate = date;
+  poiLayer.clearLayers(); dayRouteLayer.clearLayers();
+
+  // reset marker opacity
+  cityLayer.eachLayer(l=> l.setStyle && l.setStyle({opacity:1, fillOpacity:1, radius:7}));
+
+  const items = (data.itinerary||[]).filter(x=>x.date===date).sort(sortByTimeThenIndex);
+  const pts = [];
+
+  items.forEach(item=>{
+    if(item.type==='note') return;
+    if(item.type==='city'){
+      const c = data.cities.find(cc => cc.key === item.ref); if(!c) return;
+      pts.push([c.lat, c.lon]);
+      const m = markerIndex.get(c.key); if(m) m.setStyle({radius:11});
+    } else if(item.type==='poi'){
+      const lat=item.lat, lon=item.lon;
+      let coord = null;
+      if(lat && lon){ coord=[lat,lon]; }
+      else if(item.ref){ const c = data.cities.find(cc=>cc.key===item.ref); if(c) coord=[c.lat,c.lon]; }
+      if(coord){
+        pts.push(coord);
+        L.circleMarker(coord, {radius:7, color:'#111827', weight:2, fillColor:'#22c55e', fillOpacity:1})
+          .addTo(poiLayer)
+          .bindTooltip(item.title || 'POI', {permanent:true, direction:'right', offset:[10,0], className:'city-label'})
+          .on('click', ()=> focusItemOnMap(item));
+      }
+    }
+  });
+
+  if(pts.length>=2) L.polyline(pts, {color:'#f97316', weight:4, opacity:.9}).addTo(dayRouteLayer);
+  if(pts.length) map.fitBounds(L.latLngBounds(pts), {padding:[40,40]});
+
+  // dim non-active markers
+  cityLayer.eachLayer(l => l.setStyle && l.setStyle({opacity:.25, fillOpacity:.25}));
+  // re-highlight active city markers
+  items.forEach(it=>{
+    if(it.type==='city'){
+      const m = markerIndex.get(it.ref);
+      if(m) m.setStyle({opacity:1, fillOpacity:1, radius:11});
+    }
+  });
 }
 
-/* Section headers on warm paper */
-.card h3{
-  font-family:"Noto Serif JP", serif;
-  background:linear-gradient(180deg,var(--jp-pink),#ffeef2);
-  color:#7a0000;
+// Add itinerary (top form)
+addItineraryBtn.addEventListener('click', ()=>{
+  const date = itDate.value;
+  const time = itTime.value || '';
+  const type = itType.value;
+  const ref  = itCity.value || '';
+  const title= itTitle.value.trim();
+  const lat  = parseFloat(itLat.value);
+  const lon  = parseFloat(itLon.value);
+
+  if(!date) return;
+  if(type==='city' && !ref) return;
+  if(type==='poi' && !title) return;
+
+  const item = { id:newId(), date, time, type };
+  if(type==='city'){ item.ref = ref; }
+  if(type==='poi'){ item.ref = ref || ''; if(Number.isFinite(lat) && Number.isFinite(lon)) { item.lat=lat; item.lon=lon; } item.title=title; }
+  if(type==='note'){ item.title = title || 'Note'; }
+
+  data.itinerary.push(item); save();
+  itTitle.value=''; itLat.value=''; itLon.value='';
+  renderItinerary();
+  if(state.activeDate===date) showDayOnMap(date);
+});
+
+// Type toggles visible fields
+itType.addEventListener('change', ()=>{
+  const v = itType.value;
+  itCity.style.display = (v==='city'||v==='poi') ? '' : 'none';
+  itTitle.style.display= (v!=='city') ? '' : 'none';
+  itLat.style.display  = (v==='poi') ? '' : 'none';
+  itLon.style.display  = (v==='poi') ? '' : 'none';
+});
+itType.dispatchEvent(new Event('change'));
+
+// ====== IMPORT / EXPORT ======
+const exportBtn = $('#exportBtn');
+const importFile = $('#importFile');
+exportBtn.addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'japan-trip-planner.json'; a.click();
+  URL.revokeObjectURL(a.href);
+});
+importFile.addEventListener('change',(e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ try{
+      const d = JSON.parse(reader.result);
+      const fresh = load();
+      data = {...fresh, ...d};
+      data.cities = (data.cities||[]).map(c=>({ sideTrip:false, ...c })).filter(c => !c.friend);
+      data.checklist = (data.checklist||[]).map(x=> typeof x==='string'?({text:x,done:false}):x);
+      if (data.shared && (!data.notes || data.notes.length===0)) {
+        data.notes = [{ title:'Shared', tag:'', body:String(data.shared), ts: Date.now() }];
+        delete data.shared;
+      }
+      data.itinerary = Array.isArray(data.itinerary) ? data.itinerary : [];
+      save(); init();
+    } catch(err){ alert('Invalid JSON'); } };
+  reader.readAsText(file);
+});
+
+// ====== SHAREABLE LINKS (no backend) ======
+function encodeState(obj){
+  try { return LZString.compressToEncodedURIComponent(JSON.stringify(obj)); }
+  catch(e){ return ""; }
+}
+function decodeState(str){
+  try { return JSON.parse(LZString.decompressFromEncodedURIComponent(str) || ""); }
+  catch(e){ return null; }
 }
 
-/* Tabs: keep structure, add icons + JP gradient when active */
-.tab[data-tab="budget"]::before{ content:"\A5"; font-weight:900; margin-right:6px }
-.tab[data-tab="checklist"]::before{ content:"\2705"; margin-right:6px }
-.tab[data-tab="shared"]::before{ content:"\1F4DC"; margin-right:6px }
-.tab[data-tab="itinerary"]::before{ content:"\1F4C5"; margin-right:6px }
-.tab.active{ background:linear-gradient(180deg,var(--jp-pink),var(--accent)); color:#fff5f5 }
+// If URL has a shared state (#d=...), load it
+(function loadFromHash(){
+  const h = location.hash || "";
+  if (h.startsWith("#d=")){
+    const payload = h.slice(3);
+    const d = decodeState(payload);
+    if (d && typeof d === "object"){
+      // merge with a fresh default to keep shapes
+      const fresh = load();
+      data = { ...fresh, ...d };
+      data.cities = (data.cities||[]).map(c=>({ sideTrip:false, ...c })).filter(c => !c.friend);
+      data.checklist = (data.checklist||[]).map(x=> typeof x==='string'?({text:x,done:false}):x);
+      data.itinerary = Array.isArray(data.itinerary) ? data.itinerary : [];
+      save();
+    }
+    // Clean the hash so future shares reflect any edits
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+})();
 
-/* Route list: highlight active like a torii lacquer */
-.route button.active{
-  background:linear-gradient(180deg,var(--jp-red),#7f1d1d);
-  border-color:var(--jp-red);
-  color:#fff;
+// Share button → copies a URL with state encoded in the hash
+const shareBtn = document.getElementById('shareBtn');
+if (shareBtn){
+  shareBtn.addEventListener('click', async ()=>{
+    const encoded = encodeState(data);
+    if(!encoded){ alert("Couldn’t generate link."); return; }
+    const url = `${location.origin}${location.pathname}?v=1#d=${encoded}`;
+    try{
+      await navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!\nShare it with a friend.");
+    }catch{
+      prompt("Copy this link:", url);
+    }
+  });
 }
 
-/* Countdown chip: subtle lacquer edge */
-.countdown-widget{
-  box-shadow:0 2px 0 #0008, inset 0 0 0 1px rgba(0,0,0,.5);
+
+// ====== RECOMMENDED (fetch JSON → cards with Add buttons) ======
+let RECOMMENDED = [];
+const recList = $('#recommendedList');
+const recCityFilter = $('#recCityFilter');
+const recCategoryFilter = $('#recCategoryFilter');
+
+function cityKeyByName(name){
+  const m = data.cities.find(c => c.name.toLowerCase() === String(name||'').toLowerCase());
+  return m ? m.key : '';
 }
+function renderRecommendedList(){
+  if(!recList) return;
+  recList.innerHTML = '';
+  const citySel = (recCityFilter && recCityFilter.value) || '';
+  const catSel  = (recCategoryFilter && recCategoryFilter.value) || '';
 
-/* Map tooltip: sakura paper */
-.leaflet-tooltip.city-label{
-  background:linear-gradient(180deg,#ffeef2,#f9cbd3);
-  color:#5c0000;
+  const items = RECOMMENDED.filter(x =>
+    (!citySel || String(x.city).toLowerCase() === citySel.toLowerCase()) &&
+    (!catSel  || String(x.category).toLowerCase() === catSel.toLowerCase())
+  );
+
+  if(items.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'hint';
+    empty.textContent = 'No items match the filters.';
+    recList.appendChild(empty);
+    return;
+  }
+
+  items.forEach(x => {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+
+    const head = document.createElement('div'); head.className='note-head';
+    const t = document.createElement('div'); t.className='note-title'; t.textContent = x.name;
+    const meta = document.createElement('div'); meta.className='note-meta'; meta.textContent = `${x.city} • ${x.category}`;
+    head.append(t, meta);
+
+    const body = document.createElement('div'); body.className='note-body'; body.textContent = x.description || '';
+
+    const actions = document.createElement('div'); actions.className='note-actions';
+    const addBtn = document.createElement('button'); addBtn.className='btn ok'; addBtn.textContent='Add to Itinerary';
+    addBtn.addEventListener('click', ()=>{
+      // Add as POI using current form selections where possible
+      const date = itDate.value || prompt('Date (YYYY-MM-DD)?', '');
+      if(!date) return;
+      const ref = itCity.value || cityKeyByName(x.city);
+      const item = { id:newId(), date, time: itTime.value||'', type:'poi', ref, title: x.name };
+      if (Number.isFinite(+x.lat) && Number.isFinite(+x.lon)) { item.lat = +x.lat; item.lon = +x.lon; }
+      data.itinerary.push(item); save(); renderItinerary(); if(state.activeDate===date) showDayOnMap(date);
+    });
+    actions.append(addBtn);
+
+    card.append(head, body, actions);
+    recList.appendChild(card);
+  });
 }
-
-/* Itinerary day label in vermilion */
-.it-day .it-head h3{ color:var(--jp-red) }
-
-/* Optional (off by default): floating sakura — include the markup only if desired */
-.sakura-layer{ position:fixed; inset:0; pointer-events:none; z-index:0 }
-.sakura-layer .petal{ position:absolute; top:-10vh; width:10px; height:8px; background:var(--jp-sakura); border-radius:60% 40% 60% 40%; opacity:.65; transform:rotate(15deg); animation:fall 12s linear infinite }
-.sakura-layer .petal:nth-child(2){ left:12vw; animation-delay:2s }
-.sakura-layer .petal:nth-child(3){ left:28vw; animation-delay:4s }
-.sakura-layer .petal:nth-child(4){ left:52vw; animation-delay:1s }
-.sakura-layer .petal:nth-child(5){ left:72vw; animation-delay:3s }
-.sakura-layer .petal:nth-child(6){ left:88vw; animation-delay:5s }
-@keyframes fall{ 0%{ transform:translateY(-10vh) rotate(0deg) } 100%{ transform:translateY(110vh) rotate(360deg) } }
-
-
-/* === FINAL JDM SINGLE-THEME OVERRIDES ===================== */
-
-/* Global accents (in case earlier tokens linger) */
-:root{
-  --jdm-green:#00ff9d;
-  --jdm-purple:#8b5cf6;
-  --accent:var(--jdm-green);
-  --accent-2:var(--jdm-purple);
-  --jp-red:#ff3b3b;
-  --jp-gold:#b3b3b3; /* neutral metallic, not yellow */
+function populateRecFilters(){
+  if(recCityFilter){
+    const cities = Array.from(new Set(RECOMMENDED.map(r => r.city))).sort();
+    recCityFilter.innerHTML = '<option value="">All cities</option>' + cities.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
 }
-
-/* Header + title */
-header{ border-bottom:3px solid var(--jdm-green); background:rgba(6,10,20,.85); }
-.title{ color:#e5e7eb; }
-.title::after{ color:var(--jdm-purple); opacity:.6; }
-
-/* Countdown chip (remove yellow “washi”) */
-.countdown-widget{
-  color:#e5e7eb;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 2px 0 #0006, inset 0 0 0 1px #000;
+function renderRecommended(){
+  populateRecFilters();
+  renderRecommendedList();
 }
+if(recCityFilter) recCityFilter.addEventListener('change', renderRecommendedList);
+if(recCategoryFilter) recCategoryFilter.addEventListener('change', renderRecommendedList);
 
-/* Cards: dark header, subtle neon border */
-.card h3{
-  background:linear-gradient(180deg,#0b0f1a,#111827);
-  color:#e5e7eb;
-  border-bottom:1px solid rgba(0,229,255,.3);
-}
-.card h3::before{ color:var(--jdm-green); }
+fetch('recommended.json')
+  .then(r => r.ok ? r.json() : [])
+  .then(arr => { RECOMMENDED = Array.isArray(arr) ? arr : []; renderRecommended(); })
+  .catch(()=>{ RECOMMENDED=[]; renderRecommended(); });
 
-/* Tabs */
-.tab.active{
-  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
-  color:#000;
+// ====== INIT ======
+function init(){
+  renderRoute(); drawMap(); fillBudgetCities(); renderBudget();
+  renderChecklist(); renderNotes(); selectCity(); updateCountdown();
+  fillItineraryCities(); renderItinerary();
+  // initial tab (first button or budget fallback)
+  const initiallyActive = document.querySelector('.tabs .tab.active');
+  showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
+  map.fitBounds(JAPAN_BOUNDS, { padding:[40,40] });
 }
+init();
 
-/* Route buttons: remove maple lacquer */
-.route button.active{
-  background:linear-gradient(180deg,#1f2937,#0f172a);
-  border-color:var(--jdm-green);
-  color:#fff;
-}
-
-/* Badges */
-.badge{
-  color:#0a0d16;
-  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
-}
-.friend{ color:var(--jdm-green); }
-
-/* Map tooltip: neon, not washi */
-.leaflet-tooltip.city-label{
-  background:linear-gradient(90deg,var(--jdm-green),var(--jdm-purple));
-  color:#000;
-  border:1px solid rgba(255,255,255,.2);
-}
-.leaflet-tooltip.city-label:before{
-  border-right-color: rgba(255,255,255,.2);
-}
-
-/* Gentle neon wash over bg */
-body.jp-max::before{
-  content:"";
-  position:fixed; inset:0; pointer-events:none; z-index:0;
-  background:
-    linear-gradient(120deg, rgba(0,229,255,.12), rgba(255,31,112,.10) 60%, transparent 100%),
-    radial-gradient(900px 600px at 20% 100%, rgba(0,229,255,.15), transparent 70%);
-}
-
-/* === Readability fixes ===================================== */
-
-/* Put the hint on its own line, and tone down the color */
-.sidebar .inner.opt .hint,
-.section .hint{
-  display:block;
-  margin-top:6px;
-  color: var(--muted);
-}
-
-/* Make sure content inside cards/tabs is light on dark */
-.card .inner,
-.tabPanel,
-.tabPanel .actions,
-.note-card,
-.note-card .note-head,
-.note-card .note-title,
-.note-card .note-meta,
-.note-card .note-body,
-.note-card .note-tags {
-  color: var(--text);
-}
-
-/* Tables in dark: headers and cells */
-.table-clean th,
-.table-clean td {
-  color: var(--text);
-}
-
-/* Inputs/selects/textarea text + placeholder on dark bg */
-input, select, textarea {
-  color: var(--text);
-  background: #0f172a;
-  border: 1px solid rgba(255,255,255,.12);
-}
-input::placeholder,
-textarea::placeholder {
-  color: rgba(229,231,235,.55); /* light placeholder */
-}
-
-/* Route buttons: ensure base text is readable */
-.route button {
-  color: var(--text);
-}
-
-/* Checklist items */
-.list .item-text { color: var(--text); }
-.list .item-text.done { opacity:.6; text-decoration: line-through; }
+// (Theme switcher removed) — single-theme build uses static JDM styles.
