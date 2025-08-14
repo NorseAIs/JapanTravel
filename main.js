@@ -982,11 +982,18 @@ if (addAllRecBtn){
   });
 }
 
-fetch('recommended.json')
+fetch('recommended.json', { cache: 'no-store' })
   .then(r => r.ok ? r.json() : [])
-  .then(arr => { RECOMMENDED = Array.isArray(arr) ? arr : []; renderRecommended(); })
-  .catch(()=>{ RECOMMENDED=[]; renderRecommended(); });
-
+  .then(arr => { 
+    RECOMMENDED = Array.isArray(arr) ? arr : []; 
+    renderRecommended();
+    drawMap && drawMap(); // make sure map runs even if fetch is slow
+  })
+  .catch(() => { 
+    RECOMMENDED = []; 
+    renderRecommended();
+    drawMap && drawMap(); // run map even if fetch fails
+  });
 // ====== WHEN TO VISIT (seasonality data + renderer) =========
 // Values are illustrative, tuned to “feel right” for visitors.
 // crowd: 0=Low, 1=Med, 2=High
@@ -1145,3 +1152,4 @@ if (banner) banner.style.display = isPublic ? 'block' : 'none';
   map.fitBounds(JAPAN_BOUNDS, { padding:[40,40] });
 }
 init();
+
