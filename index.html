@@ -9,16 +9,33 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
-
   <!-- JP fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
 
+  <!-- LZ-String for Share links -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+
+  <!-- Basic SEO -->
+  <meta name="description" content="Plan and share a Japan itinerary with map, budget, checklists, and curated recommendations." />
+  <meta name="theme-color" content="#0b0f1a" />
+
+  <!-- Social (optional image can be added later) -->
+  <meta property="og:title" content="Japan Trip Planner" />
+  <meta property="og:description" content="Build a shareable Japan itinerary with map, budget, checklists, and recommendations." />
+  <meta property="og:type" content="website" />
+  <!-- <meta property="og:image" content="https://your-username.github.io/your-repo/og-image.jpg" /> -->
+  <!-- <meta property="og:url" content="https://your-username.github.io/your-repo/" /> -->
+
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="jp-max">
+<body class="jp-max" data-readonly="0">
   <div class="app">
     <header>
+      <div id="publicBanner" style="display:none" class="card" >
+  <div class="inner" style="padding:8px 12px;">
+    <strong>Read-only preview.</strong> You can browse and print this plan. To edit, open the normal link (no <code>?public=1</code>).
+  </div>
+</div>
       <div class="title">
         <span class="hinomaru"></span>
         <span class="mincho">日本旅</span>
@@ -35,14 +52,16 @@
           <span>出発日</span>
           <input id="departInput" type="date" />
         </div>
-        <!-- removed theme picker for single-theme build -->
         <button class="btn" id="exportBtn">Export JSON</button>
         <label class="btn" for="importFile">Import JSON
           <input id="importFile" type="file" accept="application/json" hidden>
         </label>
+        <button class="btn" id="shareBtn">Share</button>
+        <button class="btn" id="templateBtn">Templates</button>
+        <button class="btn" id="printBtn">Print / PDF</button>
+        <button class="btn" id="showOnboard">Show tips</button>
+        <button class="btn" id="feedbackBtn">Feedback</button>
       </div>
-      <button class="btn" id="shareBtn">Share</button>
-
     </header>
 
     <aside>
@@ -51,7 +70,6 @@
           <h3>🗺️ Route</h3>
           <div class="route" id="routeList"></div>
         </div>
-
       </div>
     </aside>
 
@@ -62,6 +80,19 @@
           <div class="inner mapWrap">
             <div id="leafletMap"></div>
             <div class="legend">Leaflet + OpenStreetMap • Click a city/itinerary item to focus</div>
+          </div>
+        </div>
+
+        <!-- Onboarding (shown once, controlled by main.js) -->
+        <div class="card" id="onboardCard" style="display:none; margin-top:12px;">
+          <h3>✨ Get started fast</h3>
+          <div class="inner">
+            <p>Pick a starter plan or keep building your own.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button class="btn ok" id="tplFirstTimer">7-Day First-Timer</button>
+              <button class="btn ok" id="tplAnimeTour">Anime Tour (Tokyo)</button>
+              <button class="btn" id="onboardDismiss">Dismiss</button>
+            </div>
           </div>
         </div>
 
@@ -87,14 +118,64 @@
         </div>
       </div>
 
-      <div class="card mtop">
-        <div class="tabs">
-          <button class="tab" data-tab="budget">💴 Budget</button>
-          <button class="tab" data-tab="checklist">🎒 Packing & To-do</button>
-          <button class="tab" data-tab="shared">Notes</button>
-          <button class="tab" data-tab="itinerary">🗓️ Itinerary</button>
-          <button class="tab" data-tab="recommended">Recommended</button>
-        </div>
+      <div class="tabs">
+  <!-- NEW: Tips first + set as default active -->
+  <button class="tab active" data-tab="tips">💡 Tips & Advice</button>
+  <button class="tab" data-tab="budget">💴 Budget</button>
+  <button class="tab" data-tab="checklist">🎒 Packing & To-do</button>
+  <button class="tab" data-tab="shared">Notes</button>
+  <button class="tab" data-tab="itinerary">🗓️ Itinerary</button>
+  <button class="tab" data-tab="recommended">Recommended</button>
+</div>
+
+<!-- NEW: Tips & Advice -->
+<div class="tabPanel" id="tab-tips">
+  <div class="inner tips">
+    <h4 style="margin-top:12px">When to Visit — at a glance</h4>
+
+    <div class="when-toolbar">
+      <label for="whenCitySel">Region:</label>
+      <select id="whenCitySel">
+        <option value="japan">Japan (overall)</option>
+        <option value="tokyo">Tokyo (Kantō)</option>
+        <option value="kansai">Kyoto / Osaka (Kansai)</option>
+        <option value="hokkaido">Hokkaidō (Sapporo)</option>
+        <option value="okinawa">Okinawa (Naha)</option>
+      </select>
+      <span class="when-legend">
+        <span class="legend-label">Crowds:</span>
+        <span class="pill crowd low">Low</span>
+        <span class="pill crowd med">Med</span>
+        <span class="pill crowd high">High</span>
+        <span class="sep"></span>
+        <span class="legend-label">Prices:</span>
+        <span class="price-legend">
+          <span class="dollar on" aria-hidden="true">$</span>
+          <span class="dollar off" aria-hidden="true">$</span>
+          <span class="dollar off" aria-hidden="true">$</span>
+          <span class="dollar off" aria-hidden="true">$</span>
+        </span>
+      </span>
+    </div>
+
+    <div id="whenGrid" class="when-grid"></div>
+
+    <h4>Transport tips</h4>
+    <ul class="bullet">
+      <li><strong>IC cards</strong> (Suica/PASMO/ICOCA) for local trains, metro, konbini.</li>
+      <li><strong>JR Pass?</strong> Worth it only if you’re doing multiple long shinkansen hops in ~7–14 days.</li>
+      <li><strong>Seat reservations:</strong> consider for weekends/holidays and busy routes.</li>
+    </ul>
+
+    <h4>Etiquette & practical</h4>
+    <ul class="bullet">
+      <li>No eating on most local trains; quiet voices; queue lines on platforms.</li>
+      <li>Cash is still common at small shops; ATMs at 7-Eleven work with foreign cards.</li>
+      <li>Learn a few: こんにちは (hello), ありがとうございます (thank you), すみません (excuse me).</li>
+    </ul>
+  </div>
+</div>
+
 
         <!-- Budget -->
         <div class="tabPanel" id="tab-budget">
@@ -183,6 +264,7 @@
               <option value="Culture">Culture</option>
               <option value="Shopping">Shopping</option>
             </select>
+            <button class="btn ok" id="addAllRec">Add all to day</button>
           </div>
           <div id="recommendedList" class="notes-grid"></div>
         </div>
