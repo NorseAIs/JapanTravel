@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+
   <!-- JP fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
 
@@ -23,17 +25,24 @@
         <span class="divider"></span>
         <span>Japan Trip Planner · <span id="yearSpan"></span></span>
       </div>
+
+      <div class="header-center">
+        <div id="countdown" class="countdown-widget">Set a departure date →</div>
+      </div>
+
       <div class="right">
         <div class="pill">
           <span>出発日</span>
           <input id="departInput" type="date" />
-          <span id="countdown"></span>
         </div>
+        <!-- removed theme picker for single-theme build -->
         <button class="btn" id="exportBtn">Export JSON</button>
         <label class="btn" for="importFile">Import JSON
           <input id="importFile" type="file" accept="application/json" hidden>
         </label>
       </div>
+      <button class="btn" id="shareBtn">Share</button>
+
     </header>
 
     <aside>
@@ -42,16 +51,7 @@
           <h3>🗺️ Route</h3>
           <div class="route" id="routeList"></div>
         </div>
-        <div class="section">
-          <h3>⚙️ Options</h3>
-          <div class="inner opt">
-            <label class="inline">
-              <input type="checkbox" id="toggleFriend"/>
-              Show friend plans (Gunma, Fukushima)
-            </label>
-            <span class="hint">Click a city to edit. Drag to reorder.</span>
-          </div>
-        </div>
+
       </div>
     </aside>
 
@@ -61,7 +61,7 @@
           <h3>⛩ Map & Route</h3>
           <div class="inner mapWrap">
             <div id="leafletMap"></div>
-            <div class="legend">Leaflet + OpenStreetMap • Click a city or route item to focus</div>
+            <div class="legend">Leaflet + OpenStreetMap • Click a city/itinerary item to focus</div>
           </div>
         </div>
 
@@ -89,9 +89,11 @@
 
       <div class="card mtop">
         <div class="tabs">
-          <button class="tab active" data-tab="budget">💴 Budget</button>
+          <button class="tab" data-tab="budget">💴 Budget</button>
           <button class="tab" data-tab="checklist">🎒 Packing & To-do</button>
-          <button class="tab" data-tab="shared">🗣️ Shared Notes</button>
+          <button class="tab" data-tab="shared">Notes</button>
+          <button class="tab" data-tab="itinerary">🗓️ Itinerary</button>
+          <button class="tab" data-tab="recommended">Recommended</button>
         </div>
 
         <!-- Budget -->
@@ -149,6 +151,42 @@
           </div>
           <div id="notesList" class="notes-grid"></div>
         </div>
+
+        <!-- Itinerary -->
+        <div class="tabPanel" id="tab-itinerary" style="display:none">
+          <div class="actions it-actions">
+            <input type="date" id="itDate" />
+            <input type="time" id="itTime" placeholder="Time" />
+            <select id="itType">
+              <option value="city">City</option>
+              <option value="poi">POI</option>
+              <option value="note">Note</option>
+            </select>
+            <select id="itCity"></select>
+            <input type="text" id="itTitle" placeholder="Title (for POI/Note)" />
+            <input type="number" step="any" id="itLat" placeholder="Lat (POI optional)" />
+            <input type="number" step="any" id="itLon" placeholder="Lon (POI optional)" />
+            <button id="addItinerary" class="btn ok">Add</button>
+          </div>
+          <div class="hint">Tip: Click a date header to focus the map. Drag items to reorder within that day.</div>
+          <div id="itineraryList"></div>
+        </div>
+
+        <!-- Recommended -->
+        <div class="tabPanel" id="tab-recommended" style="display:none">
+          <div class="actions">
+            <select id="recCityFilter"><option value="">All cities</option></select>
+            <select id="recCategoryFilter">
+              <option value="">All categories</option>
+              <option value="Destination">Destination</option>
+              <option value="Food">Food</option>
+              <option value="Culture">Culture</option>
+              <option value="Shopping">Shopping</option>
+            </select>
+          </div>
+          <div id="recommendedList" class="notes-grid"></div>
+        </div>
+
       </div>
     </main>
   </div>
