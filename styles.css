@@ -773,3 +773,12 @@ body[data-readonly="1"] #printBtn {
   margin-right:4px;
   font-size:.75rem;
 }
+
+@media print {
+  header, .tabs, .actions, .legend { display: none !important; }
+  .app { grid-template-columns: 1fr !important; }
+  main { padding: 0 !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+  #leafletMap { height: 300px !important; }
+  .table-clean thead th { position: static !important; }
+}
