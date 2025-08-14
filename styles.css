@@ -497,3 +497,279 @@ textarea::placeholder {
 /* Checklist items */
 .list .item-text { color: var(--text); }
 .list .item-text.done { opacity:.6; text-decoration: line-through; }
+
+/* === Product polish: onboarding & print ===================== */
+
+/* Make onboarding card breathe a bit */
+#onboardCard .inner p { margin: 0 0 8px 0; }
+
+/* Print-friendly layout */
+@media print {
+  body { background: #fff; }
+  header, .tabs, .legend, #onboardCard { display: none !important; }
+  .app, main, .content, .card { box-shadow: none !important; background:#fff !important; }
+  .card h3 { background:#fff !important; color:#000 !important; border:none !important; }
+  .tabPanel, .card .inner, .table-clean th, .table-clean td { color:#000 !important; }
+  #leafletMap { height: 300px !important; }
+}
+
+/* === Ensure header controls are visible ===================== */
+header .right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;        /* allow wrapping instead of clipping */
+}
+
+.btn{
+  display:inline-flex;   /* avoid accidental collapse */
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+}
+
+/* On small screens, prevent buttons from disappearing off-screen */
+@media (max-width: 640px){
+  header .right .btn {
+    flex: 0 1 auto;
+  }
+}
+
+/* === Read-only (public) mode ================================ */
+body[data-readonly="1"] .btn.ok,
+body[data-readonly="1"] .btn.warn,
+body[data-readonly="1"] .actions .btn,
+body[data-readonly="1"] .note-actions .btn,
+body[data-readonly="1"] .it-del,
+body[data-readonly="1"] .route .draggable { 
+  pointer-events: none;
+  opacity: .5;
+}
+
+body[data-readonly="1"] input,
+body[data-readonly="1"] select,
+body[data-readonly="1"] textarea {
+  background: #0f172a !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* But keep these usable in public mode */
+body[data-readonly="1"] #shareBtn,
+body[data-readonly="1"] #printBtn {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* === Ensure header controls lay out properly */
+header .right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+}
+
+/* === Read-only (public) mode ================================ */
+body[data-readonly="1"] .btn.ok,
+body[data-readonly="1"] .btn.warn,
+body[data-readonly="1"] .actions .btn,
+body[data-readonly="1"] .note-actions .btn,
+body[data-readonly="1"] .it-del,
+body[data-readonly="1"] .route .draggable {
+  pointer-events: none;
+  opacity: .5;
+}
+body[data-readonly="1"] input,
+body[data-readonly="1"] select,
+body[data-readonly="1"] textarea {
+  background: #0f172a !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+/* Keep Share/Print usable in public mode */
+body[data-readonly="1"] #shareBtn,
+body[data-readonly="1"] #printBtn {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* === Print polish ========================================== */
+@media print {
+  body { background: #fff; }
+  header, .tabs, .legend, #onboardCard { display: none !important; }
+  .app, main, .content, .card { box-shadow: none !important; background:#fff !important; }
+  .card h3 { background:#fff !important; color:#000 !important; border:none !important; }
+  .tabPanel, .card .inner, .table-clean th, .table-clean td { color:#000 !important; }
+  #leafletMap { height: 300px !important; }
+}
+
+/* === Tips & Advice styling ================================= */
+.tips h4 { margin: 0 0 8px 0; color: var(--text); }
+.tips .bullet { margin: 6px 0 12px 18px; }
+.tips .bullet li { margin: 4px 0; }
+
+.callout{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  padding: 10px;
+  border-radius: 10px;
+}
+.callout strong { display:block; margin-bottom:4px; }
+.callout em { display:block; margin-top:6px; opacity:.8; }
+
+.callout.pro{ outline: 1px solid rgba(0,255,157,.25); }
+.callout.neutral{ outline: 1px solid rgba(139,92,246,.25); }
+
+/* Keep text readable in dark panels */
+#tab-tips, #tab-tips .inner, #tab-tips li, #tab-tips p { color: var(--text); }
+
+.when-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+  gap: 6px;
+  margin: 10px 0 15px;
+}
+
+.when-month {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  text-align: center;
+  padding: 6px;
+  font-size: 0.85rem;
+}
+
+.when-month strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.when-month .temp {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  margin-bottom: 3px;
+}
+
+.when-month .crowd,
+.when-month .price {
+  font-size: 0.75rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin: 1px auto;
+  display: inline-block;
+}
+
+.crowd.low, .price.low {
+  background: rgba(0,255,157,0.15);
+  color: #00ff9d;
+}
+
+.crowd.med, .price.med {
+  background: rgba(255,215,0,0.15);
+  color: #ffd700;
+}
+
+.crowd.high, .price.high {
+  background: rgba(255,87,87,0.15);
+  color: #ff5757;
+}
+
+/* === When to Visit ========================================= */
+.when-toolbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin: 6px 0 8px;
+}
+.when-toolbar label{ opacity:.85; }
+.when-toolbar select{
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px; padding: 6px 8px;
+}
+
+.when-legend{ display:flex; align-items:center; gap:6px; opacity:.9; }
+.when-legend .sep{ width:10px; display:inline-block; }
+
+.pill{ display:inline-block; padding:2px 6px; border-radius:6px; font-size:.75rem; }
+.pill.crowd.low{ background: rgba(0,255,157,.15); color:#00ff9d; }
+.pill.crowd.med{ background: rgba(255,215,0,.15); color:#ffd700; }
+.pill.crowd.high{ background: rgba(255,87,87,.15); color:#ff5757; }
+
+.when-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.when-month {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  text-align: center;
+  padding: 8px;
+  font-size: 0.9rem;
+}
+.when-month strong { display:block; margin-bottom:4px; color: var(--text); }
+.when-month .temp { font-size: .8rem; opacity:.9; margin-bottom:4px; }
+.when-month .crowd { font-size:.75rem; border-radius:6px; padding: 1px 6px; display:inline-block; }
+.when-month .price-dollars { margin-top:4px; font-size:.9rem; letter-spacing:1px; }
+
+.dollar{ opacity:.35; }
+.dollar.on{ opacity:1; color:#00ff9d; }    /* green as price increases */
+.dollar.off{ color:rgba(255,255,255,.35); }
+
+/* Improve layout/spacing for the When-to-Visit toolbar */
+.when-toolbar{
+  width: 100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin: 6px 0 14px;   /* extra bottom space so it doesn't feel like it overlaps */
+  padding: 4px 0;
+  z-index: 2;
+}
+
+.when-toolbar select{
+  max-width: 260px;     /* prevent super-wide select on desktop */
+}
+
+/* On small screens, keep the toolbar above content while scrolling the tab */
+@media (max-width: 720px){
+  .when-toolbar{
+    position: sticky;
+    top: 0;             /* sits under your header/title */
+    background: var(--bg, #0b0f1a);
+    box-shadow: 0 2px 0 rgba(255,255,255,0.06);
+    padding: 8px 0;
+    z-index: 12;        /* stay above the grid/cards */
+  }
+  .when-grid{ margin-top: 6px; }
+}
+
+/* Clarify legend meaning */
+.when-legend .legend-label{
+  font-size:.8rem;
+  opacity:.85;
+  margin-right:4px;
+}
+
+/* Add in-card labels without changing JS structure */
+.when-month .crowd::before{
+  content: "Crowds: ";
+  opacity:.8;
+  margin-right:3px;
+  font-size:.75rem;
+}
+.when-month .price-dollars::before{
+  content: "Prices: ";
+  opacity:.8;
+  margin-right:4px;
+  font-size:.75rem;
+}
