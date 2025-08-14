@@ -84,6 +84,70 @@ departInput.addEventListener('change',()=>{ data.departure = departInput.value; 
 updateCountdown();
 setInterval(updateCountdown, 60*1000);
 
+// ---- Month Grid (compact) ----
+const monthsView = document.getElementById('monthsView');
+
+function renderMonths(months){
+  if (!monthsView) return;
+  if (!Array.isArray(months) || months.length === 0){
+    monthsView.innerHTML = ''; // nothing to show
+    return;
+  }
+  monthsView.innerHTML = months.map(m => `
+    <div class="mcard">
+      <div class="mhdr">
+        <span class="mname">${m.name}</span>
+        <span class="mtemp">${m.temp ?? '—'}</span>
+      </div>
+      <div class="mrow">
+        <span class="mlabel">Crowds</span>
+        <div class="mbar ${m.crowds || 'med'}"><i></i></div>
+        <span class="badge ${m.crowds || 'med'}">${m.crowds || 'med'}</span>
+      </div>
+      <div class="mrow">
+        <span class="mlabel">Prices</span>
+        <div class="mbar ${m.cost || 'med'}"><i></i></div>
+        <span class="badge ${m.cost || 'med'}">${m.cost || 'med'}</span>
+      </div>
+      <div class="mfoot">
+        ${m.rain ? `<span class="mdot"></span><span>${m.rain}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Helper that tries to find your month data.
+   Plug in your real monthly data source here. */
+function getMonthsForRegion(region){
+  // If you already have per-month data, return it here.
+  // Expected shape: [{name:'Jan', temp:'5–10°C', rain:'low', crowds:'low|med|high', cost:'low|med|high'}, ... x12]
+
+  // Example placeholder so the UI renders immediately:
+  const NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // You can replace this table with your real per-region dataset later.
+  return NAMES.map((name,i) => ({
+    name,
+    temp: '—',          // fill with '5–10°C' etc.
+    rain: '',           // e.g. 'rainy', 'typhoon season', etc.
+    crowds: (i>=2&&i<=4) ? 'high' : (i===7 ? 'high' : (i===11?'med':'low')), // example
+    cost:   (i>=2&&i<=4) ? 'high' : (i===7 ? 'high' : (i===11?'med':'low')),
+  }));
+}
+
+// Call on load + when region changes:
+function updateWhen(){
+  const r = REGION[data.region] || REGION.japan;
+  avgTemp.textContent = r.t;
+  rain.textContent = r.r;
+  crowds.textContent = r.c;
+  cost.textContent = r.$;
+
+  // Render the compact month grid
+  const months = getMonthsForRegion(data.region);
+  renderMonths(months);
+}
+
+
 // ====== SIDEBAR / ROUTE ======
 const routeList = $('#routeList');
 
@@ -634,8 +698,8 @@ importFile.addEventListener('change',(e)=>{
   reader.onload = ()=>{ try{
       const d = JSON.parse(reader.result);
       const fresh = load();
-      data = {...fresh, ...d};
-      data.cities = (data.cities||[]).map(c=>({ sideTrip:false, ...c })).filter(c => !c.friend);
+      data = { ...fresh, ...d };
+      data.cities = (data.cities || []).map(c => ({ sideTrip: false, ...c })).filter(c => !c.friend);
       data.checklist = (data.checklist||[]).map(x=> typeof x==='string'?({text:x,done:false}):x);
       if (data.shared && (!data.notes || data.notes.length===0)) {
         data.notes = [{ title:'Shared', tag:'', body:String(data.shared), ts: Date.now() }];
@@ -666,7 +730,7 @@ function decodeState(str){
     if (d && typeof d === "object"){
       const fresh = load();
       data = { ...fresh, ...d };
-      data.cities = (data.cities||[]).map(c=>({ sideTrip:false, ...c })).filter(c => !c.friend);
+      data.cities = (data.cities || []).map(c => ({ sideTrip: false, ...c })).filter(c => !c.friend);
       data.checklist = (data.checklist||[]).map(x=> typeof x==='string'?({text:x,done:false}):x);
       data.itinerary = Array.isArray(data.itinerary) ? data.itinerary : [];
       save();
@@ -678,18 +742,23 @@ function decodeState(str){
 // Share button → copies a URL with state encoded in the hash
 const shareBtn = document.getElementById('shareBtn');
 if (shareBtn){
-  shareBtn.addEventListener('click', async ()=>{
-    const encoded = encodeState(data);
-    if(!encoded){ alert("Couldn’t generate link."); return; }
-    const url = `${location.origin}${location.pathname}?v=1#d=${encoded}`;
-    try{
-      await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!\nShare it with a friend.");
-    }catch{
-      prompt("Copy this link:", url);
-    }
-  });
+  shareBtn?.addEventListener('click', async () => {
+  const url = location.origin + location.pathname + location.search + '#d=' + encodeState(data);
+  try {
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = 'Copied!';
+    // Screen readers: announce success without stealing focus
+    document.getElementById('ariaStatus')?.replaceChildren(
+      document.createTextNode('Link copied to clipboard')
+    );
+    setTimeout(() => (shareBtn.textContent = 'Share'), 1200);
+  } catch (_) {
+    prompt('Copy link:', url);
+  }
+});
 }
+
+document.getElementById('ariaStatus')?.replaceChildren(document.createTextNode('Link copied to clipboard'));
 
 // ====== STARTER TEMPLATES & ONBOARDING ======================
 const ONBOARD_LS = 'jp_onboard_done_v1';
