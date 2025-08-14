@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Leaflet CSS & JS (must be before main.js) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
   <!-- JP fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
 
@@ -29,8 +34,10 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="jp-max" data-readonly="0">
+   <a class="skip-link" href="#main">Skip to main content</a>
   <div class="app">
-    <header>
+    <header role="banner">
+      <div id="ariaStatus" aria-live="polite" class="visually-hidden"></div>
       <div id="publicBanner" style="display:none" class="card" >
   <div class="inner" style="padding:8px 12px;">
     <strong>Read-only preview.</strong> You can browse and print this plan. To edit, open the normal link (no <code>?public=1</code>).
@@ -47,21 +54,28 @@
         <div id="countdown" class="countdown-widget">Set a departure date →</div>
       </div>
 
-      <div class="right">
-        <div class="pill">
-          <span>出発日</span>
-          <input id="departInput" type="date" />
-        </div>
-        <button class="btn" id="exportBtn">Export JSON</button>
-        <label class="btn" for="importFile">Import JSON
-          <input id="importFile" type="file" accept="application/json" hidden>
-        </label>
-        <button class="btn" id="shareBtn">Share</button>
-        <button class="btn" id="templateBtn">Templates</button>
-        <button class="btn" id="printBtn">Print / PDF</button>
-        <button class="btn" id="showOnboard">Show tips</button>
-        <button class="btn" id="feedbackBtn">Feedback</button>
-      </div>
+      <div class="header-controls">
+  <div class="pill">
+    <span>出発日</span>
+    <input id="departInput" type="date" />
+  </div>
+
+  <button class="btn" id="shareBtn">Share</button>
+  <button class="btn" id="templateBtn">Templates</button>
+  <button class="btn" id="printBtn">Print / PDF</button>
+  <button class="btn" id="showOnboard">Show tips</button>
+  <button class="btn" id="feedbackBtn">Feedback</button>
+
+  <!-- Move this block to be the LAST item -->
+  <div class="dropdown">
+  <button class="btn dropdown-toggle">More ▾</button>
+  <div class="dropdown-menu">
+    <button type="button" class="menu-item" id="exportBtn">Export JSON</button>
+    <button type="button" class="menu-item" id="importBtn">Import JSON</button>
+    <input id="importFile" type="file" accept="application/json" hidden>
+  </div>
+</div>
+</div>
     </header>
 
     <aside>
@@ -73,7 +87,23 @@
       </div>
     </aside>
 
-    <main>
+    <main id="main" role="main">
+      <!-- Templates panel -->
+<section id="templatesPanel" class="templates hide" aria-hidden="true">
+  <h3>Starter Plans</h3>
+  <div class="tpl-row">
+    <button class="btn tpl" data-days="7">Apply 7-day plan</button>
+    <button class="btn tpl" data-days="14">Apply 14-day plan</button>
+    <button class="btn tpl" data-days="21">Apply 21-day plan</button>
+  </div>
+  <p class="muted">
+    Uses <code>recommended.json</code> if present to suggest key POIs.  
+    Your Notes and Budget will be kept.
+  </p>
+  <div class="tpl-actions">
+    <button class="btn" id="templatesClose">Close</button>
+  </div>
+</section>
       <div class="content">
         <div class="card">
           <h3>⛩ Map & Route</h3>
@@ -118,7 +148,7 @@
         </div>
       </div>
 
-      <div class="tabs">
+      <div class="tabs" id="tabs" role="navigation" aria-label="Primary">
   <!-- NEW: Tips first + set as default active -->
   <button class="tab active" data-tab="tips">💡 Tips & Advice</button>
   <button class="tab" data-tab="budget">💴 Budget</button>
@@ -131,6 +161,8 @@
 <!-- NEW: Tips & Advice -->
 <div class="tabPanel" id="tab-tips">
   <div class="inner tips">
+    <!-- Compact Month Grid -->
+<div id="monthsView" class="month-grid" aria-label="Monthly overview"></div>
     <h4 style="margin-top:12px">When to Visit — at a glance</h4>
 
     <div class="when-toolbar">
@@ -181,9 +213,9 @@
         <div class="tabPanel" id="tab-budget">
           <div class="actions">
             <select id="budgetCity"></select>
-            <input id="bItem" placeholder="Item (e.g., Hotel, JR, Food)" />
-            <input id="bCost" type="number" placeholder="Cost (JPY)" />
-            <input id="bPeople" type="number" placeholder="People" value="1"/>
+            <input id="bItem" placeholder="Item (e.g., Hotel, JR, Food)" aria-label="Item (e.g., Hotel, JR, Food)" />
+            <input id="bCost" type="number" placeholder="Cost (JPY)" aria-label="Cost (JPY)" />
+            <input id="bPeople" type="number" placeholder="People" value="1" aria-label="People"/>
             <button class="btn primary" id="addBudget">Add</button>
             <button class="btn ok" id="saveBudget" style="display:none">Save</button>
             <button class="btn" id="cancelEdit" style="display:none">Cancel</button>
