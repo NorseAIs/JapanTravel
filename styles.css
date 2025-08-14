@@ -782,3 +782,327 @@ body[data-readonly="1"] #printBtn {
   #leafletMap { height: 300px !important; }
   .table-clean thead th { position: static !important; }
 }
+
+/* === Compact Month Grid === */
+.month-grid{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 1100px){ .month-grid{ grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 740px){ .month-grid{ grid-template-columns: repeat(2, 1fr); } }
+
+.mcard{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.mhdr{ display:flex; align-items:center; gap:8px; }
+.mname{ font-weight:800; }
+.mtemp{ margin-left:auto; color: var(--muted); font-size: 12px; }
+
+.mrow{ display:grid; grid-template-columns: auto 1fr auto; gap:8px; align-items:center; }
+.mlabel{ color: var(--muted); font-size: 12px; }
+
+.mbar{
+  height: 8px; border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  position: relative; overflow: hidden;
+}
+.mbar > i{
+  position:absolute; inset:0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(0,229,255,.5), rgba(139,92,246,.5));
+}
+
+/* widths by level */
+.mbar.low  > i{ transform: scaleX(.33); }
+.mbar.med  > i{ transform: scaleX(.66); }
+.mbar.high > i{ transform: scaleX(1);  }
+
+/* pill badges */
+.badge{
+  font-size:11px; padding:2px 6px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  text-transform: lowercase;
+}
+.badge.low  { color:#22c55e; }
+.badge.med  { color:#eab308; }
+.badge.high { color:#ef4444; }
+
+/* tiny foot line */
+.mfoot{ display:flex; gap:8px; color:var(--muted); font-size:11px; }
+.mdot{ width:6px; height:6px; border-radius:999px; background: rgba(255,255,255,.35); }
+
+/* ========== A11y + Responsive Additions (safe to append) ========== */
+
+/* Fluid, readable base */
+html { font-size: clamp(14px, 1.1vw + 10px, 18px); }
+body { -webkit-text-size-adjust: 100%; }
+
+/* Skip link (keyboard users) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #111827;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+.skip-link:focus { left: 10px; }
+
+/* Consistent focus styles */
+:focus-visible {
+  outline: 3px solid #22d3ee; /* cyan-400 */
+  outline-offset: 2px;
+}
+button:focus { outline: none; } /* rely on :focus-visible */
+
+/* Touch target sizing */
+button, .actions .import span, input[type="checkbox"] + label, .card .del, .it-row .del, .todo .del {
+  min-height: 44px; /* recommended by WCAG for touch */
+}
+nav.tabs button { padding: 10px 12px; }
+
+/* Mobile-friendly tabs: allow horizontal scroll on small screens */
+nav.tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+nav.tabs::-webkit-scrollbar { height: 6px; }
+nav.tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
+
+/* Layout container breathing room on small screens */
+main { padding-inline: clamp(10px, 2.5vw, 24px); }
+
+/* Cards & grids adapt smoothly */
+.cards { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+/* Forms: make inputs full-width on narrow screens */
+@media (max-width: 700px){
+  .it-form { grid-template-columns: 1fr; display: grid; }
+  .it-form > * { width: 100% !important; }
+  .note-form { grid-template-columns: 1fr !important; }
+  .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+/* Prefer-reduced-motion: cut fancy effects if user asks */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* High-contrast tweaks: stronger borders + text for key UI */
+@media (prefers-contrast: more) {
+  .card, .it-row, .todo, .note, .metric {
+    border-color: rgba(255,255,255,.35) !important;
+    background: rgba(255,255,255,.08) !important;
+  }
+  .legend .chip { border-color: rgba(255,255,255,.35) !important; }
+}
+
+/* Tables: allow horizontal scroll on very small screens */
+.budget {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Buttons: clear disabled state */
+button[disabled], .actions button[disabled] {
+  opacity: .6; cursor: not-allowed;
+}
+
+/* Labels and text: ensure readable contrast for muted text */
+:root { --muted: rgba(255,255,255,.85); }
+
+/* Map (if present): ensure a sensible mobile height */
+#leafletMap { min-height: 320px; }
+
+/* Month grid polish (if you’re using it) */
+.month-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  margin: -1px; border: 0; padding: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #111827;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+.skip-link:focus { left: 10px; }
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  margin: -1px; border: 0; padding: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.header-controls input,
+.header-controls button,
+.header-controls label {
+  height: 2.25rem;
+}
+
+/* Make the date control look like a button-sized control in the header */
+.header-controls .pill{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 2.25rem; /* matches the buttons you set */
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: linear-gradient(180deg,#0b1220,#0a0f1d);
+  font-size: 0.95rem; /* reset from tiny pill size */
+}
+
+/* The date input inside that pill should not have its own box */
+.header-controls .pill input[type="date"]{
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0;
+  margin: 0;
+}
+.header-controls .pill span{ opacity: .9; }
+
+/* Dropdown container */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  background: #0b1220;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  padding: 0.5rem;
+  top: 100%;
+  right: 0;
+  z-index: 999;
+}
+
+.dropdown-menu .btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0;
+}
+
+.dropdown.open .dropdown-menu {
+  display: block;
+}
+
+/* In the dropdown menu, use compact menu sizing (not the 2.25rem header height) */
+.header-controls .dropdown-menu .btn {
+  display: flex;               /* match button alignment */
+  align-items: center;
+  height: auto;                /* don't force the tall header height */
+  padding: 8px 10px;           /* compact menu padding */
+  white-space: nowrap;
+}
+
+/* Ensure the label behaves exactly like a button in the menu */
+.header-controls .dropdown-menu label.btn {
+  cursor: pointer;
+}
+
+/* Hide the file input consistently (in case hidden attr is removed later) */
+.header-controls .dropdown-menu label.btn input[type="file"] {
+  display: none !important;
+}
+
+/* Compact, uniform items inside the dropdown (separate from header .btn) */
+.header-controls .dropdown-menu {
+  min-width: 180px;
+}
+
+.header-controls .dropdown-menu .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  line-height: 1.2;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  height: auto;          /* override any global .btn height */
+  text-align: left;
+  white-space: nowrap;
+  appearance: none;
+}
+
+.header-controls .dropdown-menu .menu-item:hover {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+}
+
+.header-controls .dropdown-menu .menu-item:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+/* Match dropdown text color to site theme */
+.header-controls .dropdown-menu .menu-item {
+  color: var(--text); /* uses your existing light text variable */
+}
+
+/* Make 出発日 label match theme */
+.header-controls .pill span {
+  color: var(--text);
+}
+.header-controls .dropdown-menu .menu-item,
+.header-controls .pill span {
+  color: #fff;
+}
+
+.templates.hide{ display:none; }
+.templates{
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.06);
+}
+.templates h3{ margin:0 0 8px 0; }
+.tpl-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.tpl-actions{ margin-top:10px; }
+.templates .muted{ color: var(--muted); font-size:.95rem; }
+
