@@ -791,7 +791,52 @@ const TEMPLATES = {
       { city:"tokyo", items:["Nakano Broadway","Mandarake complex"] },
       { city:"tokyo", items:["Odaiba DiverCity","Gundam statue","Palette Town"] },
     ]
-  }
+  }  ,
+fourteenDay: {
+  name: '14-Day Plan',
+  cities: [
+    { key:"tokyo",     name:"Tokyo",     lat:35.6895, lon:139.6917, plan:"Shibuya / Asakusa / Akihabara / Evangelion Store Tokyo-01", sideTrip:false },
+    { key:"nagoya",    name:"Nagoya",    lat:35.1815, lon:136.9066, plan:"Miso katsu / hitsumabushi / Osu / Toyota/SCMAGLEV museum", sideTrip:false },
+    { key:"kanazawa",  name:"Kanazawa",  lat:36.5613, lon:136.6562, plan:"Kenroku-en / Omicho Market / Higashi Chaya", sideTrip:false },
+    { key:"kyoto",     name:"Kyoto",     lat:35.0116, lon:135.7681, plan:"Fushimi Inari / Gion / Kiyomizu-dera / Arashiyama", sideTrip:false },
+    { key:"nara",      name:"Nara",      lat:34.6851, lon:135.8049, plan:"Tōdai-ji (day trip from Kyoto/Osaka)", sideTrip:true },
+    { key:"hiroshima", name:"Hiroshima", lat:34.3853, lon:132.4553, plan:"Peace Park / Miyajima / okonomiyaki", sideTrip:false },
+    { key:"osaka",     name:"Osaka",     lat:34.6937, lon:135.5023, plan:"Dotonbori / Kuromon / Osaka Castle / Umeda", sideTrip:false }
+  ],
+  days: [
+    // Tokyo (4)
+    { city:"tokyo", items:["Shibuya Crossing","Meiji Shrine","Shinjuku Omoide Yokocho"] },
+    { city:"tokyo", items:["Asakusa Senso-ji","Nakamise","Tokyo Skytree view"] },
+    { city:"tokyo", items:["Akihabara Electric Town","Kanda Myojin","Evangelion Store Tokyo-01 (Ikebukuro)"] },
+    { city:"tokyo", items:["teamLab Planets","Odaiba DiverCity Gundam","Evening transfer prep"] },
+
+    // Nagoya (2)
+    { city:"nagoya", items:["Nagoya Castle","Osu Shopping Street","Miso katsu dinner"] },
+    { city:"nagoya", items:["Toyota Commemorative Museum or SCMAGLEV & Railway Park","Sakae area walk"] },
+
+    // Kanazawa (2)
+    { city:"kanazawa", items:["Kenroku-en Garden","Omicho Market lunch"] },
+    { city:"kanazawa", items:["Higashi Chaya District","21st Century Museum of Contemporary Art"] },
+
+    // Kyoto (2)
+    { city:"kyoto", items:["Fushimi Inari","Gion walk","Kiyomizu-dera"] },
+    { city:"kyoto", items:["Arashiyama Bamboo Grove","Nishiki Market"] },
+
+    // Nara day trip (1)
+    { city:"nara", items:["Tōdai-ji Great Buddha","Nara Park","Kasuga Taisha","Return evening"] },
+
+    // Hiroshima (1)
+    { city:"hiroshima", items:["Peace Memorial Park & Museum","Okonomiyaki"] },
+
+    // Miyajima + Osaka (arrival) (1)
+    { city:"hiroshima", items:["Miyajima (Itsukushima Shrine)","Ferry views","Evening transfer to Osaka"] },
+
+    // Osaka (final day)
+    { city:"osaka", items:["Osaka Castle","Umeda Sky Building","Dotonbori & Kuromon Market","Optional: Arima Onsen day trip from Osaka"] }
+  ]
+}
+
+
 };
 
 function parseISO(d){ const x=new Date(d); return isNaN(x)?null:x; }
@@ -845,6 +890,19 @@ function applyTemplate(key){
   const onboardCard   = document.getElementById('onboardCard');
   const tplFirstTimer = document.getElementById('tplFirstTimer');
   const tplAnimeTour  = document.getElementById('tplAnimeTour');
+    const tplFourteenDay = document.getElementById('tplFourteenDay');
+  if (tplFourteenDay) tplFourteenDay.addEventListener('click', ()=> applyTemplate('fourteenDay'));
+
+  // Optional: wire the Templates panel buttons (data-days → template key mapping)
+  document.querySelectorAll('#templatesPanel .tpl').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const d = String(btn.dataset.days||'');
+      if (d==='7')       applyTemplate('firstTimer');
+      else if (d==='14') applyTemplate('fourteenDay');
+      else if (d==='21') alert('21-day template coming soon'); // placeholder
+    });
+  });
+
   const onboardDismiss= document.getElementById('onboardDismiss');
   const showOnboard   = document.getElementById('showOnboard'); // NEW
   const initiallyActive = document.querySelector('.tabs .tab.active');
