@@ -7,57 +7,103 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Shibuya_Crossing_2018.jpg",
     "lat": 35.6595,
     "lon": 139.7005,
-    "tags": [
-      "iconic",
-      "nightlife",
-      "free"
-    ],
+    "tags": ["iconic","nightlife","free"],
     "duration": "30m",
     "website": "https://www.gotokyo.org/en/spot/23/index.html"
   },
   {
     "city": "Tokyo",
-    "category": "Destination",
+    "category": "Temple",
+    "name": "Senso-ji (Asakusa)",
+    "description": "Tokyo’s oldest temple with Nakamise shopping street.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Sensoji_Temple_Main_Hall.jpg",
+    "lat": 35.7148,
+    "lon": 139.7967,
+    "tags": ["historic","temple"],
+    "duration": "1-2h",
+    "website": "https://www.senso-ji.jp/"
+  },
+  {
+    "city": "Tokyo",
+    "category": "Museum",
     "name": "teamLab Planets",
     "description": "Immersive digital art museum with mirrored water rooms.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/3/3d/TeamLab_Planets_Tokyo.jpg",
     "lat": 35.6457,
-    "lon": 139.793,
-    "tags": [
-      "art",
-      "museum",
-      "indoor"
-    ],
+    "lon": 139.7930,
+    "tags": ["art","museum","indoor"],
     "duration": "1.5-2h",
     "website": "https://www.teamlab.art/e/planets/"
   },
   {
     "city": "Tokyo",
-    "category": "Destination",
+    "category": "Shopping",
     "name": "Akihabara Radio Kaikan",
-    "description": "Landmark building packed with figure, model, and hobby shops.",
+    "description": "Landmark packed with figure, model, and hobby shops.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Radiokaikan2014.jpg",
     "lat": 35.6985,
     "lon": 139.7713,
-    "tags": [
-      "anime",
-      "shopping"
-    ],
+    "tags": ["anime","shopping"],
     "duration": "1-2h",
     "website": "https://radio-kaikan.co.jp/english/"
   },
   {
+    "city": "Tokyo",
+    "category": "Shopping",
+    "name": "Evangelion Store Tokyo-01 (Ikebukuro)",
+    "description": "Official Eva goods — perfect for souvenirs for your brother.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Ikebukuro_Sunshine_City.jpg",
+    "lat": 35.7289,
+    "lon": 139.7203,
+    "tags": ["anime","souvenirs"],
+    "duration": "30-60m",
+    "website": "https://www.evastore2.jp/real/ikebukuro/"
+  },
+  {
+    "city": "Tokyo",
+    "category": "Viewpoint",
+    "name": "Tokyo Skytree (view)",
+    "description": "Highest observation decks in Tokyo; book in advance.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/1/12/Tokyo_Skytree_2014_%28cropped%29.jpg",
+    "lat": 35.7100,
+    "lon": 139.8107,
+    "tags": ["view","ticket"],
+    "duration": "1-2h",
+    "website": "https://www.tokyo-skytree.jp/en/"
+  },
+  {
+    "city": "Tokyo",
+    "category": "District",
+    "name": "Omoide Yokocho (Shinjuku)",
+    "description": "Tiny yakitori alley — cozy vibes, best in the evening.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Omoide_Yokocho_2015.jpg",
+    "lat": 35.6930,
+    "lon": 139.7005,
+    "tags": ["food","nightlife","cozy"],
+    "duration": "1-2h",
+    "website": "https://www.gotokyo.org/en/spot/16/index.html"
+  },
+  {
+    "city": "Tokyo",
+    "category": "Park",
+    "name": "Shinjuku Gyoen",
+    "description": "Large park and gardens; great for a quiet reset.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/8/81/Shinjuku_Gyoen_2010.jpg",
+    "lat": 35.6852,
+    "lon": 139.7100,
+    "tags": ["park","relax"],
+    "duration": "1-2h",
+    "website": "https://fng.or.jp/shinjuku/en/"
+  },
+  {
     "city": "Nagoya",
-    "category": "Destination",
+    "category": "Castle",
     "name": "Nagoya Castle",
-    "description": "Reconstructed castle famed for its golden shachihoko ornaments.",
+    "description": "Reconstructed castle famed for golden shachihoko.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/1/10/Nagoya_Castle_02.jpg",
-    "lat": 35.185,
+    "lat": 35.1850,
     "lon": 136.8997,
-    "tags": [
-      "castle",
-      "history"
-    ],
+    "tags": ["castle","history"],
     "duration": "1.5-2h",
     "website": "https://www.nagoyajo.city.nagoya.jp/"
   },
@@ -65,29 +111,59 @@
     "city": "Nagoya",
     "category": "Shopping",
     "name": "Osu Shopping Street",
-    "description": "Covered arcades with vintage shops, street snacks, and temples.",
+    "description": "Arcades with vintage shops, street snacks, and temples.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Osu_shopping_street.jpg",
-    "lat": 35.159,
+    "lat": 35.1590,
     "lon": 136.9066,
-    "tags": [
-      "shopping",
-      "street-food"
-    ],
+    "tags": ["shopping","street-food"],
     "duration": "1-2h",
     "website": "https://osu.nagoya/en/"
   },
   {
+    "city": "Nagoya",
+    "category": "Museum",
+    "name": "Toyota Commemorative Museum",
+    "description": "Textile roots to automobiles — surprisingly great.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/9/92/Toyota_Commemorative_Museum_of_Industry_and_Technology.JPG",
+    "lat": 35.1816,
+    "lon": 136.8847,
+    "tags": ["museum","industry"],
+    "duration": "1.5-2h",
+    "website": "https://www.tcmit.org/english/"
+  },
+  {
+    "city": "Nagoya",
+    "category": "Transport",
+    "name": "SCMAGLEV & Railway Park",
+    "description": "Dream museum for rail nerds—Shinkansen to maglev.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5a/SCMaglev_and_Railway_Park.jpg",
+    "lat": 35.0606,
+    "lon": 136.8672,
+    "tags": ["trains","museum"],
+    "duration": "1.5-2h",
+    "website": "https://museum.jr-central.co.jp/en/"
+  },
+  {
+    "city": "Nagoya",
+    "category": "Food",
+    "name": "Yabaton (Miso katsu)",
+    "description": "Nagoya-style pork cutlet with rich miso sauce.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Miso_katsu.jpg",
+    "lat": 35.1709,
+    "lon": 136.9083,
+    "tags": ["local-specialty","food"],
+    "duration": "45-60m",
+    "website": "https://www.yabaton.com/"
+  },
+  {
     "city": "Kanazawa",
-    "category": "Destination",
+    "category": "Garden",
     "name": "Kenroku-en Garden",
     "description": "One of Japan's three great landscape gardens.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Kenroku-en_23.JPG",
     "lat": 36.5614,
     "lon": 136.6623,
-    "tags": [
-      "garden",
-      "scenic"
-    ],
+    "tags": ["garden","scenic"],
     "duration": "1-2h",
     "website": "https://www.pref.ishikawa.jp/siro-niwa/kenrokuen/e/"
   },
@@ -95,30 +171,47 @@
     "city": "Kanazawa",
     "category": "District",
     "name": "Higashi Chaya District",
-    "description": "Preserved teahouse quarter with wooden townhouses and gold leaf shops.",
+    "description": "Preserved teahouse quarter with gold leaf shops.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Higashi_Chaya-gai_Kanazawa.jpg",
     "lat": 36.5702,
-    "lon": 136.663,
-    "tags": [
-      "historic",
-      "walk"
-    ],
+    "lon": 136.6630,
+    "tags": ["historic","walk"],
     "duration": "1-2h",
     "website": "https://visitkanazawa.jp/en/"
+  },
+  {
+    "city": "Kanazawa",
+    "category": "Museum",
+    "name": "21st Century Museum of Contemporary Art",
+    "description": "Circular museum with playful installations.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/7/7e/21st_Century_Museum_of_Contemporary_Art%2C_Kanazawa.jpg",
+    "lat": 36.5610,
+    "lon": 136.6560,
+    "tags": ["art","museum"],
+    "duration": "1-2h",
+    "website": "https://www.kanazawa21.jp/en/"
+  },
+  {
+    "city": "Kanazawa",
+    "category": "Market",
+    "name": "Omicho Market",
+    "description": "Seafood and produce market — good for lunch.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Omicho_Market.jpg",
+    "lat": 36.5713,
+    "lon": 136.6567,
+    "tags": ["market","food"],
+    "duration": "45-90m",
+    "website": "https://www.ohmicho-ichiba.com/"
   },
   {
     "city": "Kyoto",
     "category": "Shrine",
     "name": "Fushimi Inari Taisha",
-    "description": "Famous shrine with thousands of vermilion torii gates.",
+    "description": "Thousands of vermilion torii gates; go early or late.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Fushimi_Inari_torii.jpg",
     "lat": 34.9671,
     "lon": 135.7727,
-    "tags": [
-      "shrine",
-      "hike",
-      "iconic"
-    ],
+    "tags": ["shrine","hike","iconic"],
     "duration": "2-3h",
     "website": "https://inari.jp/en/"
   },
@@ -126,14 +219,11 @@
     "city": "Kyoto",
     "category": "Temple",
     "name": "Kiyomizu-dera",
-    "description": "Historic hillside temple with a wooden stage and city views.",
+    "description": "Hillside temple with a wooden stage and city views.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Kiyomizu-dera.jpg",
     "lat": 34.9948,
-    "lon": 135.785,
-    "tags": [
-      "temple",
-      "view"
-    ],
+    "lon": 135.7850,
+    "tags": ["temple","view"],
     "duration": "1-2h",
     "website": "https://www.kiyomizudera.or.jp/en/"
   },
@@ -141,30 +231,47 @@
     "city": "Kyoto",
     "category": "Nature",
     "name": "Arashiyama Bamboo Grove",
-    "description": "Photogenic bamboo forest—best early morning.",
+    "description": "Photogenic bamboo forest — best at sunrise.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Arashiyama_Bamboo_Forest.jpg",
     "lat": 35.0094,
     "lon": 135.6668,
-    "tags": [
-      "scenic",
-      "walk",
-      "photo"
-    ],
+    "tags": ["scenic","walk","photo"],
     "duration": "1h",
     "website": "https://www.japan-guide.com/e/e3912.html"
+  },
+  {
+    "city": "Kyoto",
+    "category": "Market",
+    "name": "Nishiki Market",
+    "description": "Food market nicknamed 'Kyoto’s Kitchen'.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Nishiki_Market_Kyoto.jpg",
+    "lat": 35.0054,
+    "lon": 135.7642,
+    "tags": ["market","food"],
+    "duration": "45-90m",
+    "website": "https://www.kyoto-nishiki.or.jp/"
+  },
+  {
+    "city": "Kyoto",
+    "category": "District",
+    "name": "Gion",
+    "description": "Historic entertainment district — best around dusk.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Gion_district%2C_Kyoto.jpg",
+    "lat": 35.0037,
+    "lon": 135.7788,
+    "tags": ["historic","walk"],
+    "duration": "1-2h",
+    "website": "https://kyoto.travel/en/area/gion-higashiyama.html"
   },
   {
     "city": "Nara",
     "category": "Temple",
     "name": "Tōdai-ji",
-    "description": "Great Buddha Hall housing one of the world's largest bronze Buddhas.",
+    "description": "Great Buddha Hall housing a giant bronze Buddha.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Todaiji_Daibutsuden.jpg",
     "lat": 34.6896,
     "lon": 135.8399,
-    "tags": [
-      "temple",
-      "iconic"
-    ],
+    "tags": ["temple","iconic"],
     "duration": "1-2h",
     "website": "https://www.todaiji.or.jp/"
   },
@@ -172,16 +279,25 @@
     "city": "Nara",
     "category": "Park",
     "name": "Nara Park",
-    "description": "Expansive park with free-roaming deer and major temples.",
+    "description": "Expansive park with friendly deer and major temples.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Nara_Park_deer.jpg",
     "lat": 34.6851,
     "lon": 135.8431,
-    "tags": [
-      "park",
-      "wildlife"
-    ],
+    "tags": ["park","wildlife"],
     "duration": "1-3h",
     "website": "https://www.pref.nara.jp/12884.htm"
+  },
+  {
+    "city": "Nara",
+    "category": "Shrine",
+    "name": "Kasuga Taisha",
+    "description": "Ancient shrine with hundreds of stone and bronze lanterns.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Kasuga_Taisha_01.jpg",
+    "lat": 34.6809,
+    "lon": 135.8485,
+    "tags": ["shrine","historic"],
+    "duration": "1-2h",
+    "website": "https://www.kasugataisha.or.jp/"
   },
   {
     "city": "Hiroshima",
@@ -191,28 +307,33 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/1/14/Hiroshima_Peace_Memorial_Museum_2019.jpg",
     "lat": 34.3915,
     "lon": 132.4529,
-    "tags": [
-      "museum",
-      "history"
-    ],
+    "tags": ["museum","history"],
     "duration": "2-3h",
     "website": "https://hpmmuseum.jp/?lang=en"
   },
   {
-    "city": "Miyajima",
+    "city": "Hiroshima",
     "category": "Shrine",
-    "name": "Itsukushima Shrine",
+    "name": "Itsukushima Shrine (Miyajima)",
     "description": "UNESCO-listed shrine famous for its 'floating' torii gate.",
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Itsukushima_Torii_2012.jpg",
     "lat": 34.2956,
     "lon": 132.3199,
-    "tags": [
-      "shrine",
-      "UNESCO",
-      "scenic"
-    ],
+    "tags": ["shrine","UNESCO","scenic","side-trip"],
     "duration": "2-3h",
     "website": "https://www.miyajima.or.jp/english/"
+  },
+  {
+    "city": "Hiroshima",
+    "category": "Food",
+    "name": "Okonomiyaki (Nagataya)",
+    "description": "Beloved Hiroshima-style okonomiyaki near Peace Park.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/9/93/Okonomiyaki.jpg",
+    "lat": 34.3926,
+    "lon": 132.4554,
+    "tags": ["local-specialty","food"],
+    "duration": "45-60m",
+    "website": "https://nagataya-okonomi.com/"
   },
   {
     "city": "Osaka",
@@ -222,11 +343,7 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Dotonbori_at_night.jpg",
     "lat": 34.6687,
     "lon": 135.5012,
-    "tags": [
-      "nightlife",
-      "street-food",
-      "shopping"
-    ],
+    "tags": ["nightlife","street-food","shopping"],
     "duration": "1-2h",
     "website": "https://osaka-info.jp/en/spot/dotonbori/"
   },
@@ -238,12 +355,32 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Osaka_Castle_02.jpg",
     "lat": 34.6873,
     "lon": 135.5262,
-    "tags": [
-      "castle",
-      "history",
-      "view"
-    ],
+    "tags": ["castle","history","view"],
     "duration": "1.5-2h",
     "website": "https://www.osakacastle.net/"
+  },
+  {
+    "city": "Osaka",
+    "category": "Viewpoint",
+    "name": "Umeda Sky Building",
+    "description": "Floating Garden Observatory — great night views.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Umeda_Sky_Building_2014.jpg",
+    "lat": 34.7055,
+    "lon": 135.4892,
+    "tags": ["view","architecture"],
+    "duration": "1h",
+    "website": "https://www.skybldg.co.jp/en/"
+  },
+  {
+    "city": "Osaka",
+    "category": "Onsen",
+    "name": "Arima Onsen (day trip)",
+    "description": "Historic hot spring town over the mountain from Kobe; natural springs.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/Arima_Onsen_Taiko-no-Yu.jpg",
+    "lat": 34.7977,
+    "lon": 135.2500,
+    "tags": ["onsen","side-trip","relax"],
+    "duration": "half-day",
+    "website": "https://visit.arima-onsen.com/"
   }
 ]
