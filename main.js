@@ -84,6 +84,9 @@ departInput.addEventListener('change',()=>{ data.departure = departInput.value; 
 updateCountdown();
 setInterval(updateCountdown, 60*1000);
 
+function escRe(s){ return String(s||'').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+
 // ---- Month Grid (compact) ----
 const monthsView = document.getElementById('monthsView');
 
@@ -195,12 +198,57 @@ const map = L.map('leafletMap', {
   maxBounds: JAPAN_BOUNDS,
   maxBoundsViscosity: 0.7,
 });
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:12, minZoom:4, attribution:'© OpenStreetMap contributors' }).addTo(map);
+window.map = map; // ✅ make map accessible to preview functions
+
+// Base tiles (OSM supports up to z=19)
+const base = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    minZoom: 4,
+    maxZoom: 19,
+    maxNativeZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }
+).addTo(map);
+window.base = base; // so preview can respect the tile layer’s limit
+
 
 const routeLayer  = L.layerGroup().addTo(map);
 const cityLayer   = L.layerGroup().addTo(map);
 const poiLayer    = L.layerGroup().addTo(map);
 const dayRouteLayer = L.layerGroup().addTo(map);
+
+// --- Preview layer for Recommended POIs ---
+let previewLayer;
+function ensurePreviewLayer() {
+  if (window.L && window.map && !previewLayer) {
+    previewLayer = L.layerGroup().addTo(map);
+  }
+}
+function showPreviewPin(lat, lon, title='') {
+  ensurePreviewLayer();
+  if (!previewLayer || !Number.isFinite(+lat) || !Number.isFinite(+lon)) return;
+
+  // Make sure Leaflet knows the container size (fixes blank tiles in some layouts)
+  map.invalidateSize(true);
+
+  previewLayer.clearLayers();
+  const marker = L.marker([+lat, +lon], { opacity: 0.95 });
+  if (title) marker.bindPopup(title);
+  previewLayer.addLayer(marker);
+
+  // Respect the base layer’s max zoom if available
+  const layerMax = (window.base && window.base.options && window.base.options.maxZoom) ? window.base.options.maxZoom : 19;
+  const current = map.getZoom ? map.getZoom() : 10;
+  const targetZoom = Math.min(Math.max(current, 15), layerMax); // 15 feels good in cities
+
+  map.flyTo([+lat, +lon], targetZoom, { duration: 0.6 });
+}
+
+function clearPreviewPins() {
+  if (previewLayer) previewLayer.clearLayers();
+}
+
 
 function dotStyle(c){
   return { radius: 7, color:'#111827', weight:2, fillColor: (c.sideTrip ? COLOR_SIDE : COLOR_MAIN), fillOpacity:1 };
@@ -277,33 +325,52 @@ delCityBtn.addEventListener('click',()=>{
 });
 
 // ====== TABS (robust) ======
+// ====== TABS (single, robust block) ======
 const tabButtons = $$('.tabs .tab');
 const TAB_KEYS = tabButtons.map(btn => btn.dataset.tab);
+
 function showTab(id){
-  TAB_KEYS.forEach(k => {
+  const keys = (Array.isArray(TAB_KEYS) && TAB_KEYS.length)
+    ? TAB_KEYS
+    : ['tips','budget','packing','notes','itinerary','recommended','map'];
+
+  // Panels
+  keys.forEach(k => {
     const panel = document.getElementById('tab-' + k);
     if (panel) panel.style.display = (k === id) ? 'block' : 'none';
   });
+
+  // Header state
+  document.querySelectorAll('.tabs .tab').forEach(btn => {
+    const key = btn.dataset.tab;
+    const isActive = (key === id);
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+
+  // Remember current tab
+  state.activeTab = id;
+
+  // Map maintenance
+  if (id === 'map') {
+    setTimeout(() => map.invalidateSize(true), 0);
+  } else {
+    if (typeof clearPreviewPins === 'function') clearPreviewPins();
+  }
 }
 
+// Click → switch tab + persist ?tab= in URL
 tabButtons.forEach(t => t.addEventListener('click', () => {
   tabButtons.forEach(x => x.classList.remove('active'));
   t.classList.add('active');
   showTab(t.dataset.tab);
 
-  // persist tab to URL without reloading
   const url = new URL(location.href);
   url.searchParams.set('tab', t.dataset.tab);
   history.replaceState(null, '', url.toString());
 }));
 
-// ===== URL helpers & read-only/deep-link =====
-const QS = new URLSearchParams(location.search);
-function getQS(key){ return QS.get(key); }
-function setReadOnlyMode(on){
-  document.body.setAttribute('data-readonly', on ? '1' : '0');
-  if(on){ document.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true); }
-}
 
 // ===== Feedback =====
 
@@ -395,6 +462,113 @@ saveBudget.addEventListener('click',()=>{
 });
 cancelEdit.addEventListener('click', resetBudgetForm);
 
+// ==== Quick-Add helpers ====
+function cityKeyByName(name){
+  if (!name) return '';
+  const m = (data.cities||[]).find(c => (c.name||'').toLowerCase() === String(name).toLowerCase());
+  return m ? m.key : '';
+}
+
+function buildCitySelect(defaultKey){
+  const sel = document.createElement('select');
+  sel.className = 'qa-input';
+  (data.cities||[]).forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.key; opt.textContent = c.name;
+    if (defaultKey && c.key === defaultKey) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+function norm(s){
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFKD')                 // strip accents
+    .replace(/[^\w\s|]/g, ' ')         // drop punctuation (keeps letters/numbers)
+    .replace(/\s+/g, ' ')              // collapse spaces
+    .trim();
+}
+
+
+function openQuickAdd(anchorBtn, poi){
+  // Close any existing popover
+  document.querySelectorAll('.qa-pop').forEach(el=>el.remove());
+
+  const pop = document.createElement('div');
+  pop.className = 'qa-pop';
+
+  const row1 = document.createElement('div');
+  row1.className = 'qa-row';
+
+  // Date (prefill from Itinerary date picker if available)
+  const d = document.createElement('input');
+  d.type = 'date';
+  d.className = 'qa-input';
+  if (typeof itDate !== 'undefined' && itDate.value) d.value = itDate.value;
+
+  // Time (optional)
+  const t = document.createElement('input');
+  t.type = 'time';
+  t.className = 'qa-input';
+  t.placeholder = 'Time (optional)';
+
+  // City select (prefill with item.city)
+  const defaultCityKey = cityKeyByName(poi.city) || (typeof itCity!=='undefined' ? itCity.value : '');
+  const sel = buildCitySelect(defaultCityKey);
+
+  row1.append(d, t, sel);
+  pop.appendChild(row1);
+
+  const actions = document.createElement('div');
+  actions.className = 'qa-actions';
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', ()=> pop.remove());
+
+  const add = document.createElement('button');
+  add.className = 'btn ok';
+  add.textContent = 'Add';
+  add.addEventListener('click', ()=>{
+    if (!d.value) { d.focus(); return; }
+    const item = {
+      id: newId(),
+      date: d.value,
+      time: t.value || '',
+      type: 'poi',
+      ref: sel.value || cityKeyByName(poi.city) || '',
+      title: poi.name || ''
+    };
+    if (Number.isFinite(+poi.lat) && Number.isFinite(+poi.lon)) {
+      item.lat = +poi.lat; item.lon = +poi.lon;
+    }
+    data.itinerary.push(item);
+    save(); renderItinerary();
+    if (state.activeDate === d.value && typeof showDayOnMap === 'function') showDayOnMap(d.value);
+    pop.remove();
+    showTab('itinerary');
+  });
+
+  actions.append(cancel, add);
+  pop.appendChild(actions);
+
+  // Position the popover relative to the button
+  const r = anchorBtn.getBoundingClientRect();
+  pop.style.position = 'fixed';
+  pop.style.left = (r.left - 8) + 'px';
+  pop.style.top  = (r.top - 10 - 150) + 'px'; // above the card; tweak if needed
+  document.body.appendChild(pop);
+
+  // Keyboard: Enter = add, Esc = cancel
+  pop.addEventListener('keydown', (ev)=>{
+    if (ev.key === 'Enter') { ev.preventDefault(); add.click(); }
+    if (ev.key === 'Escape') { ev.preventDefault(); cancel.click(); }
+  });
+  d.focus();
+}
+
+
 // ====== CHECKLIST ======
 const checklist=$('#checklist'), cItem=$('#cItem'), addCheck=$('#addCheck'), clearChecked=$('#clearChecked');
 function renderChecklist(){
@@ -479,20 +653,44 @@ function renderItinerary(){
     const itemsWrap = document.createElement('div'); itemsWrap.className='it-items'; itemsWrap.dataset.date = date;
 
     g[date].forEach(item=>{
-      const el = document.createElement('div'); el.className='it-item'; el.draggable=true; el.dataset.id=item.id;
+      // Build one itinerary row (POI or city)
+const el = document.createElement('div');
+el.className = 'it-item';
+el.draggable = true;
+el.dataset.id = item.id;
 
-      // view row
-      const type = document.createElement('div'); type.className='it-type'; type.textContent=item.type;
-      const time = document.createElement('div'); time.className='it-time'; time.textContent=item.time||'';
-      const title= document.createElement('div'); title.className='it-title';
-      title.textContent = item.type==='city' ? cityNameByKey(item.ref) : (item.title||'(Untitled)');
+// type, time, title
+const type  = document.createElement('div'); type.className  = 'it-type';  type.textContent  = item.type;
+const time  = document.createElement('div'); time.className  = 'it-time';  time.textContent  = item.time || '';
+const title = document.createElement('div'); title.className = 'it-title';
+title.textContent = (item.type === 'city') ? cityNameByKey(item.ref) : (item.title || '(Untitled)');
 
-      const edit = document.createElement('button'); edit.className='btn ok'; edit.textContent='Edit';
-      const del  = document.createElement('button'); del.className='btn it-del'; del.textContent='×';
+// Map button
+const mapBtn = document.createElement('button');
+mapBtn.className = 'btn';
+mapBtn.textContent = 'Map';
+mapBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();         // don’t trigger the row click
+  focusItemOnMap(item);        // center the map
+  showTab('map');              // show the Map tab explicitly
+});
 
-      el.append(type, time, title, edit, del);
-      itemsWrap.appendChild(el);
+// Edit & Delete (your existing handlers can stay the same)
+const edit = document.createElement('button'); edit.className = 'btn ok';   edit.textContent = 'Edit';
+const del  = document.createElement('button'); del.className  = 'btn it-del'; del.textContent = '×';
 
+// Append ONCE, after everything exists
+el.append(type, time, title, mapBtn, edit, del);
+itemsWrap.appendChild(el);
+
+// Row click → focus on map in the background (stay on Itinerary)
+el.addEventListener('click', (e)=>{
+  if (e.target === edit || e.target === del) return;
+  focusItemOnMap(item);        // centers map but doesn't switch tabs
+});
+
+
+      
       // focus ↔ map
       el.addEventListener('click', (e)=>{ if(e.target===edit||e.target===del) return; focusItemOnMap(item); });
 
@@ -577,30 +775,60 @@ function renderItinerary(){
     });
 
     // day header click → map focus
-    head.addEventListener('click', ()=>{ state.activeDate = date; showDayOnMap(date); });
+    head.addEventListener('click', ()=>{
+  state.activeDate = date;
+  showTab('map');          // switch first so map has a size
+  showDayOnMap(date);      // then render/focus the day
+});
+
 
     dayWrap.appendChild(itemsWrap);
     itineraryList.appendChild(dayWrap);
   });
 }
 function focusItemOnMap(item){
-  if(item.type==='city'){
-    const c = data.cities.find(x=>x.key===item.ref); if(!c) return;
-    zoomAndPulse(c);
-  } else if(item.type==='poi'){
-    const lat = item.lat, lon=item.lon;
-    const coord = (lat && lon) ? [lat,lon] : null;
-    if(coord){
-      map.setView(coord, Math.max(map.getZoom(), 12), {animate:true});
-      const pt = map.latLngToContainerPoint(coord);
-      const wrap = document.createElement('div'); wrap.className='pulse-ring';
-      wrap.style.left = `${pt.x}px`; wrap.style.top = `${pt.y}px`;
-      map.getContainer().appendChild(wrap); setTimeout(()=>wrap.remove(),900);
-    } else if(item.ref){
-      const c = data.cities.find(x=>x.key===item.ref); if(c) zoomAndPulse(c);
+  // Stay on current tab; we'll just center the real map
+  let title = item.type === 'city' ? cityNameByKey(item.ref) : (item.title || '');
+  let lat, lon;
+
+  if (item.type === 'city') {
+    const c = (data.cities || []).find(x => x.key === item.ref);
+    if (!c) return;
+    lat = +c.lat; lon = +c.lon;
+  } else if (item.type === 'poi') {
+    // 1) Prefer coords already on the itinerary item
+    if (Number.isFinite(+item.lat) && Number.isFinite(+item.lon)) {
+      lat = +item.lat; lon = +item.lon;
+    }
+
+    // 2) Otherwise, try to pull from Recommended (forgiving match)
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      const cityName = cityNameByKey(item.ref) || '';
+      const rec = REC_INDEX.get(norm(cityName) + '|' + norm(item.title || ''));
+      if (rec && Number.isFinite(+rec.lat) && Number.isFinite(+rec.lon)) {
+        lat = +rec.lat; lon = +rec.lon;
+        // Enrich the itinerary item so future clicks are instant
+        item.lat = lat; item.lon = lon;
+        save();
+      }
+    }
+
+    // 3) Fallback to city center
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      const c = (data.cities || []).find(x => x.key === item.ref);
+      if (c) {
+        lat = +c.lat; lon = +c.lon;
+        title = `${title} (center of ${c.name})`;
+      }
     }
   }
+
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    showPreviewPin(lat, lon, title);
+  }
 }
+
+
 function highlightItineraryForCity(cityKey){
   const item = (data.itinerary||[]).find(x=> x.type==='city' && x.ref===cityKey);
   if(!item) return;
@@ -760,6 +988,43 @@ if (shareBtn){
 
 document.getElementById('ariaStatus')?.replaceChildren(document.createTextNode('Link copied to clipboard'));
 
+// --- Header: More dropdown toggle + Import button wiring ---
+(() => {
+  const dd = document.querySelector('.dropdown');
+  if (!dd) return;
+  const btn  = dd.querySelector('.dropdown-toggle');
+  const menu = dd.querySelector('.dropdown-menu');
+  if (!btn || !menu) return;
+
+  function closeMenu() {
+    menu.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function toggleMenu(e) {
+    e?.stopPropagation();
+    const isOpen = menu.style.display === 'block';
+    if (isOpen) closeMenu();
+    else {
+      menu.style.display = 'block';
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  btn.addEventListener('click', toggleMenu);
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && e.target !== btn) closeMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+
+  // Import button triggers hidden file input
+  const importBtn  = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => importFile.click());
+  }
+})();
+
+
 // ====== STARTER TEMPLATES & ONBOARDING ======================
 const ONBOARD_LS = 'jp_onboard_done_v1';
 const TEMPLATES = {
@@ -839,6 +1104,15 @@ fourteenDay: {
 
 };
 
+function cityNameByKey(key){
+  const c = (data.cities||[]).find(x => x.key === key);
+  return c ? c.name : '';
+}
+function hasCoords(obj){
+  return Number.isFinite(+obj?.lat) && Number.isFinite(+obj?.lon);
+}
+
+
 function parseISO(d){ const x=new Date(d); return isNaN(x)?null:x; }
 function addDays(d, n){ const z = new Date(d); z.setDate(z.getDate()+n); return z; }
 function fmtYMD(d){ return d.toISOString().slice(0,10); }
@@ -906,7 +1180,6 @@ function applyTemplate(key){
   const onboardDismiss= document.getElementById('onboardDismiss');
   const showOnboard   = document.getElementById('showOnboard'); // NEW
   const initiallyActive = document.querySelector('.tabs .tab.active');
-showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
 
   // Print
   if (printBtn) { printBtn.addEventListener('click', ()=> window.print()); }
@@ -948,10 +1221,7 @@ const recList = $('#recommendedList');
 const recCityFilter = $('#recCityFilter');
 const recCategoryFilter = $('#recCategoryFilter');
 
-function cityKeyByName(name){
-  const m = data.cities.find(c => c.name.toLowerCase() === String(name||'').toLowerCase());
-  return m ? m.key : '';
-}
+
 function currentFilteredRecommended(){
   const citySel = (recCityFilter && recCityFilter.value) || '';
   const catSel  = (recCategoryFilter && recCategoryFilter.value) || '';
@@ -960,6 +1230,19 @@ function currentFilteredRecommended(){
     (!catSel  || String(x.category).toLowerCase() === catSel.toLowerCase())
   );
 }
+
+// --- Recommended index for Itinerary lookups ---
+let REC_INDEX = new Map();
+function buildRecommendedIndex(){
+  REC_INDEX = new Map();
+  (RECOMMENDED || []).forEach(r=>{
+    const key = norm(r.city) + '|' + norm(r.name);
+    REC_INDEX.set(key, r);
+  });
+}
+
+
+
 function renderRecommendedList(){
   if(!recList) return;
   recList.innerHTML = '';
@@ -975,32 +1258,124 @@ function renderRecommendedList(){
   }
 
   items.forEach(x => {
-    const card = document.createElement('div');
-    card.className = 'note-card';
+  const card = document.createElement('div');
+  card.className = 'note-card compact';
 
-    const head = document.createElement('div'); head.className='note-head';
-    const t = document.createElement('div'); t.className='note-title'; t.textContent = x.name;
-    const meta = document.createElement('div'); meta.className='note-meta'; meta.textContent = `${x.city} • ${x.category}`;
-    head.append(t, meta);
+  // Header row: title + link
+  const head = document.createElement('div');
+  head.className = 'note-head';
+  const title = document.createElement('div');
+  title.className = 'note-title';
+  title.textContent = x.name || '(Unnamed)';
+  head.appendChild(title);
 
-    const body = document.createElement('div'); body.className='note-body'; body.textContent = x.description || '';
+  if (x.website) {
+    const link = document.createElement('a');
+    link.href = x.website; link.target = '_blank'; link.rel = 'noopener';
+    link.className = 'extlink'; link.textContent = '↗';
+    head.appendChild(link);
+  }
+  card.appendChild(head);
 
-    const actions = document.createElement('div'); actions.className='note-actions';
-    const addBtn = document.createElement('button'); addBtn.className='btn ok'; addBtn.textContent='Add to Itinerary';
-    addBtn.addEventListener('click', ()=>{
-      const date = itDate.value || prompt('Date (YYYY-MM-DD)?', '');
-      if(!date) return;
-      const ref = itCity.value || cityKeyByName(x.city);
-      const item = { id:newId(), date, time: itTime.value||'', type:'poi', ref, title: x.name };
-      if (Number.isFinite(+x.lat) && Number.isFinite(+x.lon)) { item.lat = +x.lat; item.lon = +x.lon; }
-      data.itinerary.push(item); save(); renderItinerary(); if(state.activeDate===date) showDayOnMap(date);
+  // Thumb (16:9)
+  if (x.image) {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    const img = new Image();
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.src = x.image;
+    img.alt = '';
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => thumb.remove(); // drop if it fails
+    thumb.appendChild(img);
+    card.appendChild(thumb);
+  }
+
+  // Compact meta line
+  const bits = [x.city, x.category, x.duration ? `⏱ ${x.duration}` : null].filter(Boolean);
+  if (bits.length) {
+    const meta = document.createElement('div');
+    meta.className = 'meta-line';
+    meta.textContent = bits.join(' · ');
+    card.appendChild(meta);
+  }
+
+  // Description (3 lines max)
+  if (x.description) {
+    const desc = document.createElement('div');
+    desc.className = 'note-body clamp3';
+    desc.textContent = x.description;
+    card.appendChild(desc);
+  }
+
+  // Tags (max 4)
+  if (Array.isArray(x.tags) && x.tags.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tags';
+    (x.tags.slice(0,4)).forEach(t => {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = t;
+      wrap.appendChild(tag);
     });
-    actions.append(addBtn);
+    card.appendChild(wrap);
+  }
 
-    card.append(head, body, actions);
-    recList.appendChild(card);
-  });
+
+  // Actions
+const actions = document.createElement('div');
+actions.className = 'note-actions';
+
+// Map (preview) button
+const mapBtn = document.createElement('button');
+mapBtn.className = 'btn';
+mapBtn.textContent = 'Map';
+mapBtn.title = 'Show on map';
+mapBtn.addEventListener('click', () => {
+  if (window.L && window.map && Number.isFinite(+x.lat) && Number.isFinite(+x.lon)) {
+    showPreviewPin(+x.lat, +x.lon, x.name);
+     } else if (x.image) {
+    // graceful fallback: open the image if coords are missing
+    window.open(x.image, '_blank', 'noopener');
+  }
+});
+actions.appendChild(mapBtn);
+
+// Existing Add button
+// Existing Add button
+const addBtn = document.createElement('button');
+addBtn.className = 'btn ok';
+addBtn.textContent = 'Add';
+addBtn.addEventListener('click', () => {
+  // OLD: prompt() based
+  // const date = (typeof itDate !== 'undefined' && itDate.value) ? itDate.value : prompt('Date (YYYY-MM-DD)?','');
+  // if (!date) return;
+  // ... push item ...
+
+  // NEW: open inline quick-add popover
+  openQuickAdd(addBtn, x);
+});
+actions.appendChild(addBtn);
+
+card.appendChild(actions);
+
+
+
+// Hover preview removed — only Map button will trigger
+// card.addEventListener('mouseenter', () => {
+//   if (window.L && window.map && Number.isFinite(+x.lat) && Number.isFinite(+x.lon)) {
+//     showPreviewPin(+x.lat, +x.lon, x.name);
+//   }
+// });
+// card.addEventListener('mouseleave', clearPreviewPins);
+
+
+  recList.appendChild(card);
+});
+
 }
+
 function populateRecFilters(){
   if(recCityFilter){
     const cities = Array.from(new Set(RECOMMENDED.map(r => r.city))).sort();
@@ -1044,14 +1419,17 @@ fetch('recommended.json', { cache: 'no-store' })
   .then(r => r.ok ? r.json() : [])
   .then(arr => { 
     RECOMMENDED = Array.isArray(arr) ? arr : []; 
+    buildRecommendedIndex();   // add this line
     renderRecommended();
-    drawMap && drawMap(); // make sure map runs even if fetch is slow
+    drawMap && drawMap();
   })
   .catch(() => { 
     RECOMMENDED = []; 
+    buildRecommendedIndex();   // add this line
     renderRecommended();
-    drawMap && drawMap(); // run map even if fetch fails
+    drawMap && drawMap();
   });
+
 // ====== WHEN TO VISIT (seasonality data + renderer) =========
 // Values are illustrative, tuned to “feel right” for visitors.
 // crowd: 0=Low, 1=Med, 2=High
@@ -1176,6 +1554,7 @@ const whenCitySel = document.getElementById('whenCitySel');
 if (whenCitySel){
   whenCitySel.addEventListener('change', ()=> renderWhen(whenCitySel.value));
 }
+renderWhen((whenCitySel && whenCitySel.value) || 'japan');
 
 
 // ====== INIT ======
@@ -1206,8 +1585,8 @@ if (banner) banner.style.display = isPublic ? 'block' : 'none';
   fillItineraryCities(); renderItinerary();
 
   const initiallyActive = document.querySelector('.tabs .tab.active');
-  showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
+showTab((initiallyActive ? initiallyActive.dataset.tab : (TAB_KEYS[0] || 'budget')));
+
   map.fitBounds(JAPAN_BOUNDS, { padding:[40,40] });
 }
 init();
-
