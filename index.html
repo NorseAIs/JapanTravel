@@ -55,13 +55,12 @@
       </div>
 
       <div class="header-controls">
-  <div class="pill">
-    <span>出発日</span>
-    <input id="departInput" type="date" />
-  </div>
+  <div class="depart-pill" id="departControl">
+  <label for="departInput">Departure</label>
+  <input id="departInput" type="date" aria-label="Departure date" />
+</div>
 
   <button class="btn" id="shareBtn">Share</button>
-  <button class="btn" id="templateBtn">Templates</button>
   <button class="btn" id="printBtn">Print / PDF</button>
   <button class="btn" id="showOnboard">Show tips</button>
   <button class="btn" id="feedbackBtn">Feedback</button>
@@ -88,25 +87,11 @@
     </aside>
 
     <main id="main" role="main">
-      <!-- Templates panel -->
-<section id="templatesPanel" class="templates hide" aria-hidden="true">
-  <h3>Starter Plans</h3>
-  <div class="tpl-row">
-    <button class="btn tpl" data-days="7">Apply 7-day plan</button>
-    <button class="btn tpl" data-days="14">Apply 14-day plan</button>
-    <button class="btn tpl" data-days="21">Apply 21-day plan</button>
-  </div>
-  <p class="muted">
-    Uses <code>recommended.json</code> if present to suggest key POIs.  
-    Your Notes and Budget will be kept.
-  </p>
-  <div class="tpl-actions">
-    <button class="btn" id="templatesClose">Close</button>
-  </div>
+
 </section>
       <div class="content">
         <div class="card">
-          <h3>⛩ Map & Route</h3>
+          <h3>Map & Route</h3>
           <div class="inner mapWrap">
             <div id="leafletMap"></div>
             <div class="legend">Leaflet + OpenStreetMap • Click a city/itinerary item to focus</div>
@@ -128,7 +113,7 @@
         </div>
 
         <div class="card" id="cityCard">
-          <h3>📝 City Details</h3>
+          <h3>City Details</h3>
           <div class="inner">
             <div class="grid two">
               <div><label>City</label><input id="cityName" /></div>
@@ -152,15 +137,16 @@
       <div class="tabs" id="tabs" role="navigation" aria-label="Primary">
   <!-- NEW: Tips first + set as default active -->
   <button class="tab active" data-tab="tips">💡 Tips & Advice</button>
-  <button class="tab" data-tab="budget">💴 Budget</button>
-  <button class="tab" data-tab="checklist">🎒 Packing & To-do</button>
+  <button class="tab" data-tab="budget">Budget</button>
+  <button class="tab" data-tab="checklist"> Packing & To-do</button>
   <button class="tab" data-tab="shared">Notes</button>
-  <button class="tab" data-tab="itinerary">🗓️ Itinerary</button>
+  <button class="tab" data-tab="itinerary">Itinerary</button>
   <button class="tab" data-tab="recommended">Recommended</button>
 </div>
 
 <!-- NEW: Tips & Advice -->
 <div class="tabPanel" id="tab-tips">
+  
   <div class="inner tips">
     <!-- Compact Month Grid -->
 <div id="monthsView" class="month-grid" aria-label="Monthly overview"></div>
@@ -193,21 +179,82 @@
 
     <div id="whenGrid" class="when-grid"></div>
 
-    <h4>Transport tips</h4>
+       <!-- Quick Tips callouts -->
+<div class="grid two" style="gap:10px; margin:10px 0 14px">
+  <div class="callout pro">
+    <strong>Top quick wins</strong>
     <ul class="bullet">
-      <li><strong>IC cards</strong> (Suica/PASMO/ICOCA) for local trains, metro, konbini.</li>
-      <li><strong>JR Pass?</strong> Worth it only if you’re doing multiple long shinkansen hops in ~7–14 days.</li>
-      <li><strong>Seat reservations:</strong> consider for weekends/holidays and busy routes.</li>
+      <li><b>IC cards</b> (Suica/ICOCA) work across most cities + konbini.</li>
+      <li><b>Luggage</b>: use takuhaibin (Yamato) to ship bags city→city.</li>
+      <li><b>Peak spots</b>: go early or late to skip crowds.</li>
     </ul>
-
-    <h4>Etiquette & practical</h4>
+    <em>Save time, save energy, enjoy more.</em>
+  </div>
+  <div class="callout neutral">
+    <strong>Good to know</strong>
     <ul class="bullet">
-      <li>No eating on most local trains; quiet voices; queue lines on platforms.</li>
-      <li>Cash is still common at small shops; ATMs at 7-Eleven work with foreign cards.</li>
-      <li>Learn a few: こんにちは (hello), ありがとうございます (thank you), すみません (excuse me).</li>
+      <li>Cash still common at small shops; 7-Eleven ATMs accept foreign cards.</li>
+      <li>Most restaurants don’t do tipping; a simple ありがとうございます is perfect.</li>
+      <li>Trash bins are rare — carry a small bag for your litter.</li>
     </ul>
   </div>
 </div>
+
+<h4>Transport</h4>
+<ul class="bullet">
+  <li><b>JR Pass?</b> Only worth it for several long shinkansen hops in ~7–14 days.</li>
+  <li><b>Seat reservations</b>: weekends/holidays & popular routes (Tokyo↔Kyoto/Osaka).</li>
+  <li><b>Subways/locals</b>: use IC card gates; no eating, low voices.</li>
+</ul>
+
+<h4>Connectivity</h4>
+<ul class="bullet">
+  <li><b>eSIM</b> is the easiest; airport counters also sell physical SIMs.</li>
+  <li>Station/airport Wi-Fi exists but can be spotty, don’t rely on it.</li>
+</ul>
+
+<h4>Money</h4>
+<ul class="bullet">
+  <li>Carry a little cash for shrines/markets; major chains take cards.</li>
+  <li>ATMs: 7-Eleven, Japan Post Bank; avoid dynamic currency conversion.</li>
+</ul>
+
+<h4>Onsen 101</h4>
+<ul class="bullet">
+  <li>Wash thoroughly before soaking; no swimwear in traditional baths.</li>
+  <li>Tattoos: many places now fine, but check rules; use cover seals if needed.</li>
+</ul>
+
+<h4>Etiquette</h4>
+<ul class="bullet">
+  <li>Escalators: stand on the left in Tokyo, right in Osaka (local norm can vary).</li>
+  <li>Trains: set phones to silent; no speaker audio.</li>
+  <li>Queues: follow floor markings and lines.</li>
+</ul>
+
+<h4>Packing cheatsheet</h4>
+<ul class="bullet">
+  <li>Compact umbrella, small towel, coin pouch, power adapter (Type A).</li>
+  <li>Light layers; <b>comfortable shoes</b> — you’ll walk a lot.</li>
+</ul>
+
+<h4>Useful phrases</h4>
+<ul class="bullet">
+  <li>すみません (Sumimasen - Excuse me / Sorry)</li>
+  <li>お願いします (Onegaishimasu - Please / I’d like…)</li>
+  <li>ありがとうございます (Arigatou Gozaimasu - Thank you)</li>
+</ul>
+
+<h4>Emergency / Practical</h4>
+<ul class="bullet">
+  <li>Police: 110　|　Ambulance/Fire: 119</li>
+  <li>Medication: bring essentials; some ingredients restricted — keep in original packaging.</li>
+</ul>
+
+  </div>
+</div>
+
+
 
 
         <!-- Budget -->
