@@ -151,6 +151,8 @@ function updateWhen(){
 }
 
 
+
+
 // ====== SIDEBAR / ROUTE ======
 const routeList = $('#routeList');
 
@@ -162,10 +164,10 @@ function renderRoute(){
     const b = document.createElement('button');
     b.textContent = `${i+1}. ${c.name}`;
     if(c.sideTrip){
-      const s=document.createElement('span');
-      s.className='badge';
-      s.textContent='side trip';
-      b.appendChild(s);
+      const s=document.createElement('span'); s.className='badge'; s.textContent='side trip'; b.appendChild(s);
+    }
+    if(!Number.isFinite(+c.lat) || !Number.isFinite(+c.lon)){
+      const s=document.createElement('span'); s.className='badge'; s.textContent='no pin'; b.appendChild(s);
     }
     b.className = 'draggable';
     if(c.key===state.selected) b.classList.add('active');
@@ -260,10 +262,16 @@ function drawMap(){
   markerIndex.clear();
 
   const vis = visibleCities();
-  const mainPoints = vis.map(c => [c.lat, c.lon]);
-  if (mainPoints.length >= 2) L.polyline(mainPoints, { weight: 4, color: COLOR_MAIN, opacity: 0.9 }).addTo(routeLayer);
 
+  // Only connect cities that have coords
+  const mainPoints = vis.filter(hasCoords).map(c => [c.lat, c.lon]);
+  if (mainPoints.length >= 2) {
+    L.polyline(mainPoints, { weight: 4, color: COLOR_MAIN, opacity: 0.9 }).addTo(routeLayer);
+  }
+
+  // Only drop markers for cities with coords
   vis.forEach((c, i) => {
+    if (!hasCoords(c)) return;
     const m = L.circleMarker([c.lat, c.lon], dotStyle(c))
       .addTo(cityLayer)
       .bindTooltip(`${i+1}. ${c.name}`, { permanent: true, direction: 'right', offset: [10, 0], className: 'city-label' })
@@ -272,7 +280,7 @@ function drawMap(){
     markerIndex.set(c.key, m);
   });
 
-  const fit = vis.map(c => [c.lat, c.lon]);
+  const fit = vis.filter(hasCoords).map(c => [c.lat, c.lon]);
   if (fit.length) map.fitBounds(fit, { padding: [40, 40] });
 
   if (state.activeDate) showDayOnMap(state.activeDate);
@@ -323,6 +331,42 @@ delCityBtn.addEventListener('click',()=>{
   const idx=data.cities.findIndex(x=>x.key===state.selected);
   if(idx>-1){ data.cities.splice(idx,1); save(); state.selected = data.cities[0]?.key || null; renderRoute(); drawMap(); fillBudgetCities(); selectCity(); }
 });
+
+const newCityBtn = document.getElementById('newCity');
+if (newCityBtn){
+  newCityBtn.addEventListener('click', ()=>{
+    // 1) take the typed name if present, else make a temporary one
+    const name = (cityName.value || '').trim() || 'New City';
+    // 2) make a unique key
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    let key = base || ('city-' + Math.random().toString(36).slice(2,6));
+    let n=2; while (data.cities.some(c=>c.key===key)) key = `${base}-${n++}`;
+
+    // 3) create the city with no coords yet
+    const c = {
+      key, name,
+      lat: NaN, lon: NaN,          // no map pin yet — still shows in Route
+      plan: '', notes: '', dates: '', stay: '', transport: '',
+      sideTrip: false
+    };
+
+    // 4) insert after the currently selected city, or at end
+    const i = data.cities.findIndex(x => x.key === state.selected);
+    if (i >= 0) data.cities.splice(i+1, 0, c); else data.cities.push(c);
+
+    // 5) select & render
+    state.selected = c.key;
+    save();
+    renderRoute(); drawMap(); fillBudgetCities(); selectCity();
+
+    // focus the name field so you can continue editing
+    cityName.focus();
+    document.getElementById('saveHint').textContent = 'Added — enter details and Save';
+    setTimeout(()=>{ document.getElementById('saveHint').textContent=''; }, 1200);
+  });
+}
+
+
 
 // ====== TABS (robust) ======
 // ====== TABS (single, robust block) ======
@@ -431,6 +475,7 @@ function renderBudget(){
       </td>`;
     budgetTable.appendChild(tr);
   });
+
   totalCost.textContent=sum.toLocaleString(); totalPer.textContent=per.toLocaleString();
 
   budgetTable.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -448,11 +493,39 @@ function resetBudgetForm(){
   editingIndex=null; bItem.value=''; bCost.value=''; bPeople.value='1';
   addBudget.style.display='inline-block'; saveBudget.style.display='none'; cancelEdit.style.display='none';
 }
-addBudget.addEventListener('click',()=>{
-  const city = budgetCity.value; const item=bItem.value.trim(); const cost=parseInt(bCost.value,10)||0; const ppl=parseInt(bPeople.value,10)||1;
-  if(!item||!cost) return;
-  data.budget.push({city,item,cost,people:ppl}); save(); resetBudgetForm(); renderBudget();
+addBudget.addEventListener('click', () => {
+  const city = budgetCity.value;
+
+  // read category dropdown
+  const catSel   = document.getElementById('bCategory');
+  const catVal   = catSel ? (catSel.value || '') : '';
+  const catText  = catSel ? (catSel.options[catSel.selectedIndex]?.text || '') : '';
+
+  // read rest of the form
+  const itemRaw  = bItem.value.trim();
+  const cost     = parseInt(bCost.value, 10) || 0;
+  const ppl      = parseInt(bPeople.value, 10) || 1;
+
+  if (!cost) return;                 // require a cost
+  if (!itemRaw && !catText) return;  // need at least category or an item name
+
+  // “Item” column display: "Category — Item" / "Category" / or just the item
+  const displayItem = catText ? (itemRaw ? `${catText} — ${itemRaw}` : catText) : itemRaw;
+
+  data.budget.push({
+    city,
+    item: displayItem,          // what appears in the table
+    category: catVal || null,   // machine value (optional)
+    categoryLabel: catText || '', // human label (optional)
+    cost,
+    people: ppl
+  });
+
+  save();
+  resetBudgetForm();  // your existing function clears fields + toggles buttons
+  renderBudget();
 });
+
 saveBudget.addEventListener('click',()=>{
   if(editingIndex==null) return;
   const city = budgetCity.value; const item=bItem.value.trim(); const cost=parseInt(bCost.value,10)||0; const ppl=parseInt(bPeople.value,10)||1;
@@ -1108,9 +1181,7 @@ function cityNameByKey(key){
   const c = (data.cities||[]).find(x => x.key === key);
   return c ? c.name : '';
 }
-function hasCoords(obj){
-  return Number.isFinite(+obj?.lat) && Number.isFinite(+obj?.lon);
-}
+function hasCoords(c){ return Number.isFinite(+c.lat) && Number.isFinite(+c.lon); }
 
 
 function parseISO(d){ const x=new Date(d); return isNaN(x)?null:x; }
