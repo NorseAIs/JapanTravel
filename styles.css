@@ -1386,3 +1386,202 @@ a, .extlink{ color:var(--accent); }
 }
 .when-header .k{ color: var(--muted); font-size:12px; }
 .when-header .v{ font-weight:700; }
+
+/* Prevent any hidden panel from flashing before JS runs */
+.tabPanel[hidden] { display: none !important; }
+
+.when-header{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap:10px; margin: 6px 0 8px;
+}
+.when-header .stat{
+  padding:10px 12px; border:1px solid rgba(255,255,255,.12);
+  border-radius:12px; background: rgba(255,255,255,.06);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.when-header .k{ color: var(--muted); font-size:12px; }
+.when-header .v{ font-weight:700; }
+
+:root{
+  --fg: #e8ecf1;
+  --muted: #aab6c5;
+  --card: #131a27;
+  --border: rgba(255,255,255,.12);
+  --accent: #79a8ff;
+  --shadow: 0 12px 30px rgba(0,0,0,.35);
+  --radius: 12px;
+  --space: 12px;
+}
+
+.card{ background: var(--card); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card > h3{ margin: 8px 10px; font-weight: 700; }
+.inner{ padding: 10px; }
+.note-title{ line-height: 1.3; }
+.note-body{ line-height: 1.55; }
+
+
+
+#departControl{ display:inline-flex; align-items:center; gap:12px; padding:8px 12px; border:1px solid var(--border);
+  border-radius:12px; background: linear-gradient(180deg,#0b1220,#0a0f1d); color:var(--fg); box-shadow:0 2px 0 #0006; }
+#departControl input[type="date"]{ min-width:150px; padding:8px 10px; border:1px solid transparent; border-radius:10px;
+  background:#0f172a; color:var(--fg); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color-scheme: dark; }
+#departControl input[type="date"]::-webkit-calendar-picker-indicator{ filter: invert(1) contrast(1.2); opacity:.9; cursor:pointer; }
+
+.note-card.compact{ padding:12px; }
+.meta-line{ font-size:12px; opacity:.85; margin:2px 0 8px; }
+.pill,.tag{ background:#f1f1f1; color:#111 !important; border-radius:999px; padding:2px 8px; font-size:11px; }
+.tags{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.extlink{ color:#79a8ff !important; }
+.extlink:hover{ color:#a8c6ff !important; }
+.thumb{ position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:10px; background:rgba(255,255,255,.06); margin:6px 0 8px; }
+.thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+.clamp3{
+  display: -webkit-box; display: box;
+  -webkit-line-clamp: 3; line-clamp: 3;
+  -webkit-box-orient: vertical; box-orient: vertical;
+  overflow: hidden;
+}
+
+#leafletMap{ min-height: 42vh; }
+.leaflet-tile-pane img.leaflet-tile{ filter:none !important; opacity:1 !important; }
+
+.btn{ padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--fg); }
+.btn:hover{ background: rgba(255,255,255,.06); }
+.btn.ok{ background: var(--accent); color:#fff; border:none; }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
+.note-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+
+.dropdown{ position:relative; }
+.dropdown-menu{ position:absolute; top:110%; right:0; display:none; min-width:180px; padding:6px;
+  border:1px solid var(--border); border-radius:12px; background: rgba(20,24,38,.98); box-shadow:0 8px 30px rgba(0,0,0,.35); z-index:50; }
+.dropdown-menu.open{ display:block; }
+.dropdown-menu .dropdown-item{ display:block; width:100%; text-align:left; padding:8px 10px; border-radius:8px; background:transparent; border:0; color:inherit; }
+.dropdown-menu .dropdown-item:hover{ background: rgba(255,255,255,.08); }
+
+.table thead th{ background: rgba(255,255,255,.06); }
+.table tbody tr:nth-child(even){ background: rgba(255,255,255,.03); }
+.table td, .table th{ padding:10px; }
+
+/* Tips accordion */
+.tips-accordion{ display:flex; flex-direction:column; gap:10px; margin-top:10px }
+.tips-accordion details{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:linear-gradient(180deg,#0c1222,#0a0e18);
+  box-shadow:0 2px 0 #0006;
+  overflow:hidden;
+}
+.tips-accordion summary{
+  cursor:pointer;
+  list-style:none;
+  padding:12px 14px;
+  font-weight:700;
+  color:var(--text);
+  position:relative;
+}
+.tips-accordion summary::-webkit-details-marker{ display:none }
+.tips-accordion summary::after{
+  content: "▾";
+  position:absolute; right:12px; top:12px;
+  transition: transform .15s ease;
+}
+.tips-accordion details[open] summary::after{ transform: rotate(180deg); }
+
+.tips-accordion .bullet{
+  margin:0; padding:0 14px 12px 28px;
+}
+.tips-accordion-actions{
+  display:flex; gap:8px; justify-content:flex-end; margin-top:4px;
+}
+
+.callout strong{ color: var(--fg); }
+.callout em{ color: var(--muted); }
+
+/* Accordion container */
+.tips-accordion{ gap: 12px; }
+
+/* Each panel = like a small card */
+.tips-accordion details{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg,#0c1222,#0a0e18);
+  box-shadow: var(--shadow);
+  overflow: clip;
+} 
+  /* Header row */
+.tips-accordion summary{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--fg);
+  font-weight: 700;
+  position: relative;
+  user-select: none;
+}
+.tips-accordion summary::-webkit-details-marker{ display:none; }
+
+/* Chevron that fits the theme */
+.tips-accordion summary::after{
+  content: "";
+  width: 10px; height: 10px;
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") center / contain no-repeat;
+  color: var(--muted);
+  transition: transform .15s ease, color .15s ease;
+}
+.tips-accordion details[open] summary::after{
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--accent);
+}
+
+/* Focus + hover states for a11y */
+.tips-accordion summary:focus-visible{
+  outline: 3px solid rgba(34,211,238,.7);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.tips-accordion summary:hover{ filter: brightness(1.03); }
+
+/* Body content */
+.tips-accordion .bullet{
+  color: var(--fg);
+  margin: 0;
+  padding: 0 14px 12px 28px;
+}
+.tips-accordion .bullet li{ margin: 6px 0; }
+
+/* Optional: unify little “chips” if you ever use them inside tips */
+.tips-accordion .pill,
+.tips-accordion .tag{
+  background: rgba(255,255,255,.08);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* Expand/Collapse buttons align with theme */
+.tips-accordion-actions{
+  display:flex; gap:8px; justify-content:flex-end; margin-top:4px;
+}
+.tips-accordion-actions .btn{
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg,#0b1220,#0a0f1d);
+  color: var(--fg);
+}
+
+.callout {
+  border: 1px solid rgba(255,255,255,0.08); /* subtle, neutral border */
+  background: rgba(15, 20, 35, 0.6);        /* same dark panel bg */
+  border-radius: 8px;
+  padding: 10px 12px;
+}
