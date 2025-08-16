@@ -9,10 +9,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Leaflet CSS & JS (must be before main.js) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 
   <!-- JP fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
@@ -88,7 +84,6 @@
 
     <main id="main" role="main">
 
-</section>
       <div class="content">
         <div class="card">
           <h3>Map & Route</h3>
@@ -128,6 +123,7 @@
           </div>
           <div class="foot">
             <button class="btn ok" id="saveCity">Save city</button>
+            <button class="btn" id="newCity">New city</button>
             <button class="btn warn" id="deleteCity">Delete city</button>
             <span class="hint" id="saveHint"></span>
           </div>
@@ -194,62 +190,119 @@
     <strong>Good to know</strong>
     <ul class="bullet">
       <li>Cash still common at small shops; 7-Eleven ATMs accept foreign cards.</li>
-      <li>Most restaurants don’t do tipping; a simple ありがとうございます is perfect.</li>
-      <li>Trash bins are rare — carry a small bag for your litter.</li>
+      <li>Most restaurants don’t do tipping.</li>
+      <li>Trash bins are rare, carry a small bag for your litter.</li>
     </ul>
   </div>
 </div>
 
-<h4>Transport</h4>
-<ul class="bullet">
-  <li><b>JR Pass?</b> Only worth it for several long shinkansen hops in ~7–14 days.</li>
-  <li><b>Seat reservations</b>: weekends/holidays & popular routes (Tokyo↔Kyoto/Osaka).</li>
-  <li><b>Subways/locals</b>: use IC card gates; no eating, low voices.</li>
-</ul>
+<div class="tips-accordion">
 
-<h4>Connectivity</h4>
-<ul class="bullet">
-  <li><b>eSIM</b> is the easiest; airport counters also sell physical SIMs.</li>
-  <li>Station/airport Wi-Fi exists but can be spotty, don’t rely on it.</li>
-</ul>
+  <details>
+  <summary>Transport</summary>
+  <ul class="bullet">
+    <li><b>JR Pass?</b> Only really worth it if you plan to take several long shinkansen rides within a week or two. Otherwise, just buy single tickets for each trip.</li>
+    <li><b>Seat reservations:</b> Recommended during busy periods and on popular routes such as Tokyo to Kyoto or Osaka. You can book at JR ticket counters, machines, or online through SmartEX.</li>
+    <li><b>IC cards (physical):</b> Suica, PASMO, and ICOCA can be used almost everywhere in Japan, on trains, buses, and even in convenience stores. They require a small deposit, which you can get back when returning the card.</li>
+    <li><b>Mobile IC (phone):</b> 
+      <ul>
+        <li><b>iPhone/Apple Watch:</b> You can add Suica or PASMO directly in Apple Wallet and top up with your credit card. Works just like a local card.</li>
+        <li><b>Android:</b> Only Japanese models with Osaifu-Keitai (FeliCa) can add Suica or PASMO directly. If you’re using a non-Japanese Android phone, it’s easiest to just carry a physical IC card.</li>
+      </ul>
+    </li>
+    <li><b>Shinkansen basics:</b> Arrive a little early and line up where your car number is marked on the platform. Overhead racks fit medium suitcases. Very large bags may require an “oversized baggage” seat on the Tokaido or Sanyo lines.</li>
+    <li><b>City subways:</b> Follow the arrows on the floor, stand to one side of the escalator (left in Tokyo, right in Osaka), keep your phone on silent, and avoid eating on board.</li>
+    <li><b>Airports to city:</b> From Narita, take the Narita Express or Keisei Skyliner. From Haneda, use the Monorail or Keikyu line. From Kansai Airport, JR and Nankai trains or limousine buses are available.</li>
+    <li><b>Buses:</b> Most accept IC cards. In some regions you board from the back and pay when exiting at the front, watch the signs inside.</li>
+    <li><b>Taxis and apps:</b> Safe and reliable. Doors open automatically. Most accept cards, IC, or QR payments. Useful apps include GO and Uber (which dispatch local taxis).</li>
+    <li><b>Luggage:</b> Coin lockers are in most stations. For convenience, you can send your bags from hotel to hotel overnight using delivery services like Yamato or Sagawa.</li>
+    <li><b>Driving:</b> Not recommended in big cities. If you do rent, you’ll need an International Driving Permit and should expect highway tolls (ETC system).</li>
+  </ul>
+</details>
 
-<h4>Money</h4>
-<ul class="bullet">
-  <li>Carry a little cash for shrines/markets; major chains take cards.</li>
-  <li>ATMs: 7-Eleven, Japan Post Bank; avoid dynamic currency conversion.</li>
-</ul>
+<details>
+  <summary>Connectivity</summary>
+  <ul class="bullet">
+    <li><b>Best option:</b> eSIM is usually the easiest and cheapest choice. Physical SIM cards are also sold at airports (passport required).</li>
+    <li><b>Phone payments:</b> Apple users can load Suica or PASMO into Wallet. Most Android phones from outside Japan should use a physical IC card instead.</li>
+    <li><b>Coverage:</b> NTT Docomo, KDDI (au), and SoftBank have strong LTE and 5G networks. In remote areas you might drop to 4G.</li>
+    <li><b>Hotspot:</b> Most SIM and eSIM plans allow tethering, so you can share data with a laptop or travel partner.</li>
+    <li><b>Pocket Wi-Fi:</b> Convenient for families or groups who want to share one data plan.</li>
+    <li><b>Public Wi-Fi:</b> Found in stations and cafés, but usually slow and unreliable. Don’t rely on it for directions.</li>
+    <li><b>Power:</b> Japan uses Type A plugs and 100V. Most modern chargers are dual-voltage. A small 10,000 mAh power bank is handy for long sightseeing days.</li>
+    <li><b>Apps:</b> Google Maps works well, but also try Japan-specific transit apps like Yahoo! Norikae Annai. Download offline maps for rural areas.</li>
+    <li><b>Security:</b> Avoid logging into sensitive accounts on open Wi-Fi. Use a VPN if you must connect.</li>
+  </ul>
+</details>
 
-<h4>Onsen 101</h4>
-<ul class="bullet">
-  <li>Wash thoroughly before soaking; no swimwear in traditional baths.</li>
-  <li>Tattoos: many places now fine, but check rules; use cover seals if needed.</li>
-</ul>
+<details>
+  <summary>Money</summary>
+  <ul class="bullet">
+    <li><b>Cards vs cash:</b> Credit cards and QR payments (like PayPay) are widely accepted in cities. Small shops, shrines, and rural places often prefer cash, so always carry some.</li>
+    <li><b>ATMs:</b> 7-Eleven and Japan Post Bank ATMs accept foreign cards reliably. Always choose “Without conversion” to avoid extra fees.</li>
+    <li><b>IC cards:</b> Suica, PASMO, or ICOCA can also be used to pay in convenience stores, vending machines, and trains. You can top them up with cash or card (Apple Wallet allows credit card top-ups).</li>
+    <li><b>Budget tips:</b> Accommodation costs rise during peak seasons such as cherry blossom (March–April) and autumn leaves (October–November). Weeknights are often cheaper than weekends.</li>
+  </ul>
+</details>
 
-<h4>Etiquette</h4>
-<ul class="bullet">
-  <li>Escalators: stand on the left in Tokyo, right in Osaka (local norm can vary).</li>
-  <li>Trains: set phones to silent; no speaker audio.</li>
-  <li>Queues: follow floor markings and lines.</li>
-</ul>
+<details>
+  <summary>Onsen 101</summary>
+  <ul class="bullet">
+    <li><b>Wash first:</b> Shower thoroughly before getting into the bath. Rinse the stool and area after using them.</li>
+    <li><b>No swimwear:</b> Baths are always nude. Bring a small towel, but don’t put it in the water.</li>
+    <li><b>Hair up:</b> If you have long hair, tie it so it doesn’t touch the bath water.</li>
+    <li><b>Tattoos:</b> More places are becoming tattoo-friendly, but some still restrict entry. Check the rules in advance. Waterproof cover stickers are sometimes used.</li>
+    <li><b>Health:</b> Avoid bathing if you’ve been drinking heavily. Stay hydrated and take breaks.</li>
+    <li><b>Mixed baths:</b> Rare. Most are separated by gender (男湯 / 女湯) with clear signs.</li>
+  </ul>
+</details>
 
-<h4>Packing cheatsheet</h4>
-<ul class="bullet">
-  <li>Compact umbrella, small towel, coin pouch, power adapter (Type A).</li>
-  <li>Light layers; <b>comfortable shoes</b> — you’ll walk a lot.</li>
-</ul>
+<details>
+  <summary>Etiquette</summary>
+  <ul class="bullet">
+    <li>Line up properly, let passengers off first, and keep your voice down on trains.</li>
+    <li>Escalators: stand on the left in Tokyo, on the right in Osaka. Always copy what locals are doing.</li>
+    <li>Avoid eating  while walking in crowded areas, unless you’re in a street food market. Trash bins are rare, so carry a small bag for your waste.</li>
+    <li>Take off shoes when entering homes, ryokan, and some restaurants. Slippers are usually provided.</li>
+    <li>If there’s a payment tray, place your cash or card on it instead of handing it directly.</li>
+  </ul>
+</details>
 
-<h4>Useful phrases</h4>
-<ul class="bullet">
-  <li>すみません (Sumimasen - Excuse me / Sorry)</li>
-  <li>お願いします (Onegaishimasu - Please / I’d like…)</li>
-  <li>ありがとうございます (Arigatou Gozaimasu - Thank you)</li>
-</ul>
+<details>
+  <summary>Packing cheatsheet</summary>
+  <ul class="bullet">
+    <li><b>Clothing:</b> Bring layers and comfortable shoes, since you’ll walk a lot. A compact umbrella and light jacket are useful in spring and autumn.</li>
+    <li><b>Day kit:</b> Small towel or handkerchief, coin pouch, and refillable water bottle.</li>
+    <li><b>Electronics:</b> Type A adapter, multi-USB charger, and short cables.</li>
+    <li><b>Medication:</b> Bring what you need in the original packaging. Some ingredients are restricted in Japan.</li>
+    <li><b>Extras:</b> Onsen towel, eye mask, or earplugs if you’re sensitive to light and noise.</li>
+  </ul>
+</details>
 
-<h4>Emergency / Practical</h4>
-<ul class="bullet">
-  <li>Police: 110　|　Ambulance/Fire: 119</li>
-  <li>Medication: bring essentials; some ingredients restricted — keep in original packaging.</li>
-</ul>
+<details>
+  <summary>Useful phrases</summary>
+  <ul class="bullet">
+    <li>すみません — <i>Sumimasen</i> (Excuse me / Sorry)</li>
+    <li>お願いします — <i>Onegaishimasu</i> (Please / I’d like…)</li>
+    <li>ありがとうございます — <i>Arigatō gozaimasu</i> (Thank you)</li>
+    <li>英語は話せますか？ — <i>Eigo wa hanasemasu ka?</i> (Do you speak English?)</li>
+    <li>おすすめは？ — <i>Osusume wa?</i> (What do you recommend?)</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Emergency / Practical</summary>
+  <ul class="bullet">
+    <li><b>Emergency numbers:</b> Police 110, Ambulance/Fire 119</li>
+    <li><b>Pharmacies:</b> Look for the sign “薬” (kusuri). Bring prescriptions with you, as some medicines are restricted. Keep them in the original packaging.</li>
+    <li><b>Lost and found:</b> Japan is excellent with lost items. Ask at a station counter or a police box (交番, kōban).</li>
+    <li><b>Natural hazards:</b> In case of earthquakes, protect your head, stay where you are, and follow staff instructions. Trains may stop temporarily.</li>
+    <li><b>Documents:</b> Always carry your passport (or a copy with hotel details). Hotels are required to take passport information at check-in.</li>
+  </ul>
+</details>
+
+</div>
+
 
   </div>
 </div>
@@ -261,9 +314,18 @@
         <div class="tabPanel" id="tab-budget" style="display:none">
           <div class="actions">
             <select id="budgetCity"></select>
-            <input id="bItem" placeholder="Item (e.g., Hotel, JR, Food)" aria-label="Item (e.g., Hotel, JR, Food)" />
+           <select id="bCategory">
+  <option value="">-- Select category --</option>
+  <option value="Accommodation">Accommodation</option>
+  <option value="Transport">Transport</option>
+  <option value="Food">Food</option>
+  <option value="Attractions">Attractions</option>
+  <option value="Shopping">Shopping</option>
+  <option value="Miscellaneous">Miscellaneous</option>
+</select>
+<input id="bItem" placeholder="Item (optional)" />
             <input id="bCost" type="number" placeholder="Cost (JPY)" aria-label="Cost (JPY)" />
-            <input id="bPeople" type="number" placeholder="People" value="1" aria-label="People"/>
+            <input id="bPeople" type="number" placeholder="Number of people" aria-label="People"/>
             <button class="btn primary" id="addBudget">Add</button>
             <button class="btn ok" id="saveBudget" style="display:none">Save</button>
             <button class="btn" id="cancelEdit" style="display:none">Cancel</button>
@@ -356,4 +418,3 @@
   <script src="main.js"></script>
 </body>
 </html>
-
